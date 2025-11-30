@@ -313,8 +313,8 @@ const imageToCanvas = (imageSrc: string): Promise<HTMLCanvasElement> => {
 </script>
 
 
-<style scoped>
+<!-- <style scoped>
 video {
   transform: scaleX(-1);
 }
-</style>
+</style> -->
