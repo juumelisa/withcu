@@ -33,36 +33,53 @@
         Take Photo
       </button>
     </div>
-    <div class="flex justify-center items-center">
-      <div>
-        <h2 class="mb-3">Preview</h2>
-        <div class="w-50 h-150 border border-gray-200 flex flex-col gap-2 p-2 bg-white">
-          <div v-for="index in stripNumber" :key="index" class="w-full group relative">
-            <img v-if="imageUrls[index - 1]" :src="imageUrls[index - 1]" class="w-full h-32 object-cover" />
-            <div v-else class="w-full border border-gray-200 h-32 flex justify-center items-center bg-black/80">
+    <div class="w-full flex flex-col justify-center items-center relative">
+      <h2 class="mb-3">Preview</h2>
+      <div class="relative border border-gray-200">
+        <div v-if="printedImage">
+          <img :src="printedImage" class="w-50"/>
+        </div>
+        <div class="absolute top-0 left-0 w-50 h-150 flex flex-col gap-2 p-2 bg-white/0">
+          <div
+            v-for="index in stripNumber" :key="index" class="w-full h-32 group relative"
+            :class="{
+              'border border-gray-200': !imageUrls[index - 1]
+            }">
+            <!-- <img v-if="imageUrls[index - 1]" :src="imageUrls[index - 1]" class="w-full h-32 object-cover" />
+            <div v-else class="w-full border border-gray-200 h-32 flex justify-center items-center">
               <p class="italic text-gray-400">Your photo here</p>
-            </div>
+            </div> -->
             <div v-if="imageUrls[index - 1]" class="hidden group-hover:block absolute top-0 left-0 bg-black/20 w-full h-full">
               <button class="absolute top-2 right-2 bg-gray-100 rounded-full p-1">
                 <icons-trash class="size-5" />
               </button>
             </div>
           </div>
-          <div class="w-48 italic h-full flex flex-col justify-center items-center">
-            <p>{{ currentDate }}</p>
-            <p class="text-[10px]">www.withcu.xyz</p>
-          </div>
         </div>
+      </div>
+      <div class="absolute top-10 right-0 w-10">
+        <layout-option />
+        <button class="border border-gray-200">
+          <icons-background class="size-10"/>
+        </button>
+        <button class="border border-gray-200">
+          <icons-header class="size-10"/>
+        </button>
+        <button class="border border-gray-200">
+          <icons-footer class="size-10"/>
+        </button>
       </div>
     </div>
     <div class="fixed bottom-5 right-5 flex items-center gap-3">
-      <button class="py-3 px-5 flex items-center justify-center gap-2 border border-pink-100 outline-0 rounded-full">
+      <!-- <button class="py-3 px-5 flex items-center justify-center gap-2 border border-pink-100 bg-white outline-0 rounded-full">
         <icons-edit class="size-5" />
         <p>Edit</p>
-      </button>
-      <button class="py-3 px-5 flex items-center justify-center gap-2 bg-linear-to-r from-pink-100 to-blue-300 outline-0 rounded-full">
-        <icons-print class="size-5" />
-        <p>Print</p>
+      </button> -->
+      <button
+        @click="next"
+        class="py-3 px-5 flex items-center justify-center gap-2 bg-linear-to-r from-pink-100 to-blue-300 outline-0 rounded-full">
+        <icons-next class="size-5" />
+        <p>Next</p>
       </button>
     </div>
   </div>
@@ -73,12 +90,15 @@ const videoRef = ref<HTMLVideoElement | null>(null)
 const photoCanvas = ref<HTMLCanvasElement | null>(null)
 let stream: MediaStream | null = null
 const stripNumber = ref<number>(4)
+const fullImages = ref<string>()
+const photoCanvases = ref<HTMLCanvasElement[]>([])
 const imageUrls = ref<string[]>([])
 const errorVideo = ref<boolean>(false)
 const errorMessage = ref<string>('')
 const startTimer = ref<boolean>(false)
 const restTime = ref<number>(5)
 const currentDate = ref<string>(new Date().toLocaleDateString())
+const printedImage = ref<string>()
 onMounted(async () => {
   try {
     stream = await navigator.mediaDevices.getUserMedia({
@@ -89,6 +109,7 @@ onMounted(async () => {
       videoRef.value.srcObject = stream
       await videoRef.value.play()
     }
+    generateImage()
   } catch (error: any) {
     errorVideo.value = true
     const message = error.message.toLowerCase()
@@ -109,6 +130,7 @@ onBeforeUnmount(() => {
 watch(imageUrls, (newValue) => {
   const imageValues = JSON.stringify(newValue)
   sessionStorage.setItem('photoboothImages', imageValues)
+  generateImage()
 }, { deep: true })
 
 const capture = () => {
@@ -120,6 +142,7 @@ const capture = () => {
       clearInterval(photoInterval)
       if (videoRef.value && photoCanvas.value) {
         const canvas = photoCanvas.value
+        photoCanvases.value.push(canvas)
         canvas.width = videoRef.value.videoWidth
         canvas.height = videoRef.value.videoHeight
         const ctx = canvas.getContext('2d')
@@ -133,6 +156,62 @@ const capture = () => {
       restTime.value = 5
     }
   }, 1000)
+}
+
+const generateImage = () => {
+  const canvas = document.createElement('canvas')
+  const context = canvas.getContext('2d')
+  
+  canvas.width = 600
+  canvas.height = 1800
+  const padding = 24
+  const width = 46 * 12
+  const height = 32 * 12
+  if (context) {
+    const gradient = context.createLinearGradient(0, 0, 0, canvas.height)
+    // gradient.addColorStop(0, "#bfdbfe")
+    // gradient.addColorStop(0.25, "#93c5fd")
+    // gradient.addColorStop(0.5, "#fdf2f8")
+    // gradient.addColorStop(0.75, "#fce7f3")
+    // gradient.addColorStop(1, "#fbcfe8") 
+    context.fillStyle = 'white' // or color
+    context.fillRect(0, 0, canvas.width, canvas.height)
+    if (photoCanvases.value.length) {
+      photoCanvases.value.forEach((image, index) => {
+        const yCoordinate = index * height + (padding * (index + 1))
+        context.drawImage(image, padding, yCoordinate, width, height)
+      })
+    }
+    // context.font = "normal 36px 'Dancing Script', cursive"
+    // context.fillStyle = "#000"
+    // // context.textAlign = "center"
+    // context.fillText("memories", padding, canvas.height - (padding * 2.5))
+
+    context.font = "normal 48px 'Lavishly Yourst', cursive"
+    context.fillStyle = "#000"
+    context.fillText('memories ' + currentDate.value, padding, canvas.height - (padding * 4))
+
+    context.font = "normal 36px 'Lavishly Yourst', cursive"
+    context.fillStyle = "#000"
+    context.fillText("www.withcu.com", padding, canvas.height - (padding * 2))
+  }
+  console.log('hello')
+  const dataUrl = canvas.toDataURL('image/png')
+  printedImage.value = dataUrl
+}
+
+const next = () => {
+  console.log('next')
+}
+
+const saveImage = () => {
+  generateImage()
+  if (printedImage.value) {
+    const a = document.createElement('a')
+    a.href = printedImage.value
+    a.download = 'photostrip.png'
+    a.click()
+  }
 }
 </script>
 
