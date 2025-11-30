@@ -1,10 +1,11 @@
 
 <template>
-  <div class="w-full grid grid-cols-1 md:grid-cols-2 gap-5 p-5">
-    <div class="w-full flex flex-col items-center">
-      <div class="flex">
+  <div class="w-full flex flex-col xl:flex-row xl:justify-between gap-5 p-5">
+    <div class="xl:w-1/5" />
+    <div class="w-full lg:w-auto flex flex-col items-center">
+      <div class="w-full flex flex-col">
         <div class="w-full">
-          <div class="relative">
+          <div class="relative flex flex-col justify-center items-center">
             <video
               ref="videoRef"
               autoplay
@@ -17,13 +18,17 @@
           </div>
           <p v-if="errorMessage" class="text-red-600 text-xl text-center">{{ errorMessage }}</p>
         </div>
-        <div class="bg-blue-100 text-blue-900">
+
+        <div class="w-full py-2 gap-5 flex justify-center items-center">
           <button
             @click="changeDefaultTimer"
             :disabled="startTimer"
-            class="relative w-10 h-10 flex items-center justify-center cursor-pointer">
+            class="relative w-10 h-10 flex items-center justify-center cursor-pointer disabled:cursor-default">
             <icons-timer class="size-7"/>
             <div class="w-4 h-4 absolute bottom-1 right-0.5 bg-black text-white rounded-full flex justify-center items-center text-xs">{{ defaultTimer }}</div>
+          </button>
+          <button @click="capture" :disabled="startTimer" class="w-14 h-14 bg-red-600 rounded-full flex items-center justify-center cursor-pointer disabled:cursor-default">
+            <icons-camera class="text-white size-6" />
           </button>
           <button
             @click="changeFilter"
@@ -40,7 +45,7 @@
             :key="strip"
             @click="stripNumber = strip"
             class="w-full p-3 flex justify-center items-center border rounded cursor-pointer disabled:cursor-default"
-            :disabled="strip === stripNumber"
+            :disabled="strip === stripNumber || imageUrls.length > stripNumber"
             :class="{
               'border-pink-600 text-pink-600': stripNumber == strip,
               'border-gray-200': stripNumber !== strip
@@ -48,15 +53,9 @@
             {{ strip }} strip photo
           </button>
         </div>
-        <button
-          @click="capture"
-          :disabled="imageUrls.length >= stripNumber"
-          class="w-full bg-linear-to-r from-pink-100 to-blue-300 outline-0 rounded p-3 mt-5 disabled:cursor-not-allowed">
-          Take Photo
-        </button>
       </div>
     </div>
-    <div class="w-full flex flex-col justify-center items-center relative">
+    <div class="w-full xl:w-1/5 flex flex-col justify-center items-center relative">
       <h2 class="mb-3">Preview</h2>
       <div class="relative border border-gray-200">
         <div v-if="printedImage">
@@ -69,10 +68,6 @@
             :class="{
               'border border-gray-200': !imageUrls[index - 1]
             }">
-            <!-- <img v-if="imageUrls[index - 1]" :src="imageUrls[index - 1]" class="w-full h-32 object-cover" />
-            <div v-else class="w-full border border-gray-200 h-32 flex justify-center items-center">
-              <p class="italic text-gray-400">Your photo here</p>
-            </div> -->
             <div v-if="imageUrls[index - 1]" class="hidden group-hover:block absolute top-0 left-0 bg-black/20 w-full h-full">
               <button
                 @click="deleteImage(index - 1)"
@@ -84,10 +79,6 @@
         </div>
       </div>
       <div class="absolute top-10 right-0 w-10">
-        <!-- <layout-option v-model:strip="stripNumber"/> -->
-        <!-- <button class="border border-gray-200">
-          <icons-background class="size-10"/>
-        </button> -->
         <background-option
           @on-change-background="onChangeBackground"
           :background-image="printedImage" />
