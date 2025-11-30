@@ -2,36 +2,48 @@
 <template>
   <div class="w-full grid grid-cols-1 md:grid-cols-2 gap-5 p-5">
     <div class="w-full flex flex-col items-center">
-      <div class="relative">
-        <video ref="videoRef" autoplay playsinline class="max-w-full rounded-lg" />
-        <canvas
-          ref="photoCanvas"
-          class="hidden" />
-        <div v-if="startTimer" class="absolute top-0 left-0 w-full h-full flex items-center justify-center opacity-30">
-          <p class="text-white text-7xl">{{ restTime }}</p>
+      <div class="flex">
+        <div class="w-full">
+          <div class="relative">
+            <video ref="videoRef" autoplay playsinline class="max-w-full" />
+            <div v-if="startTimer" class="absolute top-0 left-0 w-full h-full flex items-center justify-center opacity-30">
+              <p class="text-white text-7xl">{{ restTime }}</p>
+            </div>
+          </div>
+          <p v-if="errorMessage" class="text-red-600 text-xl text-center">{{ errorMessage }}</p>
+        </div>
+        <div class="bg-blue-100 text-blue-900">
+          <button
+            @click="changeDefaultTimer"
+            :disabled="startTimer"
+            class="relative w-10 h-10 flex items-center justify-center cursor-pointer">
+            <icons-timer class="size-7"/>
+            <div class="w-4 h-4 absolute bottom-1 right-0.5 bg-black text-white rounded-full flex justify-center items-center text-xs">{{ defaultTimer }}</div>
+          </button>
         </div>
       </div>
-      <p v-if="errorMessage" class="text-red-600 text-xl text-center">{{ errorMessage }}</p>
-      <div class="w-full grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
+      <div class="w-full">
+        <div class="w-full grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
+          <button
+            v-for="strip in [3, 4]"
+            :key="strip"
+            @click="stripNumber = strip"
+            class="w-full p-3 flex justify-center items-center border rounded cursor-pointer disabled:cursor-default"
+            :disabled="strip === stripNumber"
+            :class="{
+              'border-pink-600 text-pink-600': stripNumber == strip,
+              'border-gray-200': stripNumber !== strip
+            }">
+            {{ strip }} strip photo
+          </button>
+        </div>
         <button
-          v-for="strip in [3, 4]"
-          :key="strip"
-          @click="stripNumber = strip"
-          class="w-full p-3 flex justify-center items-center border rounded cursor-pointer disabled:cursor-default"
-          :disabled="strip === stripNumber"
-          :class="{
-            'border-pink-600 text-pink-600': stripNumber == strip,
-            'border-gray-200': stripNumber !== strip
-          }">
-          {{ strip }} strip photo
+          @click="capture"
+          :disabled="imageUrls.length >= stripNumber"
+          class="w-full bg-linear-to-r from-pink-100 to-blue-300 outline-0 rounded p-3 mt-5 disabled:cursor-not-allowed">
+          Take Photo
         </button>
       </div>
-      <button
-        @click="capture"
-        :disabled="imageUrls.length >= stripNumber"
-        class="w-full bg-linear-to-r from-pink-100 to-blue-300 outline-0 rounded p-3 mt-5 disabled:cursor-not-allowed">
-        Take Photo
-      </button>
     </div>
     <div class="w-full flex flex-col justify-center items-center relative">
       <h2 class="mb-3">Preview</h2>
@@ -89,15 +101,14 @@
 
 <script setup lang="ts">
 const videoRef = ref<HTMLVideoElement | null>(null)
-const photoCanvas = ref<HTMLCanvasElement | null>(null)
 let stream: MediaStream | null = null
 const stripNumber = ref<number>(3)
-const fullImages = ref<string>()
 const photoCanvases = ref<HTMLCanvasElement[]>([])
 const imageUrls = ref<string[]>([])
 const errorVideo = ref<boolean>(false)
 const errorMessage = ref<string>('')
 const startTimer = ref<boolean>(false)
+const defaultTimer = ref<number>(5)
 const restTime = ref<number>(5)
 const currentDate = ref<string>(new Date().toLocaleDateString())
 const printedImage = ref<string>()
@@ -142,6 +153,14 @@ watch(stripNumber, () => {
   generateImage()
 })
 
+const changeDefaultTimer = () => {
+  const availableTimer = [3, 5, 10]
+  const currentTimerIndex = availableTimer.findIndex(el => el == defaultTimer.value)
+  const newTime = availableTimer[currentTimerIndex + 1]
+  defaultTimer.value = newTime ? newTime : 3
+  restTime.value = defaultTimer.value
+}
+
 const capture = () => {
   startTimer.value = true
   const photoInterval = setInterval(() => {
@@ -149,7 +168,7 @@ const capture = () => {
       restTime.value --
     } else {
       clearInterval(photoInterval)
-      if (videoRef.value && photoCanvas.value) {
+      if (videoRef.value) {
         const canvas = document.createElement('canvas')
         canvas.width = videoRef.value.videoWidth
         canvas.height = videoRef.value.videoHeight
@@ -162,7 +181,7 @@ const capture = () => {
         photoCanvases.value.push(canvas)
       }
       startTimer.value = false
-      restTime.value = 5
+      restTime.value = defaultTimer.value
     }
   }, 1000)
 }
@@ -176,16 +195,8 @@ const generateImage = async() => {
   const padding = 24
   const width = 46 * 12
   const height = 32 * 12
-  const top = stripNumber.value == 3 ? 192 : 0
+  const top = stripNumber.value == 3 ? 218 : 0
   if (context) {
-    if (photoCanvases.value.length) {
-      photoCanvases.value.forEach((image, index) => {
-        const yCoordinate = top + index * height + (padding * (index + 1))
-        context.drawImage(image, padding, yCoordinate, width, height)
-      })
-    }
-
-
     if (backgroundImage.value) {
       context.drawImage(backgroundImage.value, 0, 0, canvas.width, canvas.height)
     } else {
@@ -197,8 +208,17 @@ const generateImage = async() => {
       // gradient.addColorStop(1, "#fbcfe8") 
       context.fillStyle = 'white' // or color
       context.fillRect(0, 0, canvas.width, canvas.height)
+    }
+
+    if (photoCanvases.value.length) {
+      photoCanvases.value.forEach((image, index) => {
+        const yCoordinate = top + (index * height) + (padding * (index + 1))
+        context.drawImage(image, padding, yCoordinate, width, height)
+      })
+    }
 
 
+    if (!backgroundImage.value) {
       await document.fonts.load("100px 'Lavishly Yours'")
       await document.fonts.ready
       if (top) {
@@ -239,7 +259,9 @@ const next = () => {
 
 const deleteImage = (index: number) => {
   const newImageArr = imageUrls.value.filter((el, idx) => index != idx)
+  const newCanvasImage = photoCanvases.value.filter((el, idx) => index != idx)
   imageUrls.value = newImageArr
+  photoCanvases.value = newCanvasImage
 }
 
 const saveImage = () => {
