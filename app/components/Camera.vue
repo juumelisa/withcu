@@ -58,10 +58,13 @@
         </div>
       </div>
       <div class="absolute top-10 right-0 w-10">
-        <layout-option />
-        <button class="border border-gray-200">
+        <!-- <layout-option v-model:strip="stripNumber"/> -->
+        <!-- <button class="border border-gray-200">
           <icons-background class="size-10"/>
-        </button>
+        </button> -->
+        <background-option
+          @on-change-background="onChangeBackground"
+          :background-image="printedImage" />
         <button class="border border-gray-200">
           <icons-header class="size-10"/>
         </button>
@@ -71,10 +74,6 @@
       </div>
     </div>
     <div class="fixed bottom-5 right-5 flex items-center gap-3">
-      <!-- <button class="py-3 px-5 flex items-center justify-center gap-2 border border-pink-100 bg-white outline-0 rounded-full">
-        <icons-edit class="size-5" />
-        <p>Edit</p>
-      </button> -->
       <button
         @click="next"
         class="py-3 px-5 flex items-center justify-center gap-2 bg-linear-to-r from-pink-100 to-blue-300 outline-0 rounded-full">
@@ -99,6 +98,8 @@ const startTimer = ref<boolean>(false)
 const restTime = ref<number>(5)
 const currentDate = ref<string>(new Date().toLocaleDateString())
 const printedImage = ref<string>()
+const backgroundImage = ref<HTMLCanvasElement>()
+
 onMounted(async () => {
   try {
     stream = await navigator.mediaDevices.getUserMedia({
@@ -168,14 +169,18 @@ const generateImage = () => {
   const width = 46 * 12
   const height = 32 * 12
   if (context) {
-    const gradient = context.createLinearGradient(0, 0, 0, canvas.height)
-    // gradient.addColorStop(0, "#bfdbfe")
-    // gradient.addColorStop(0.25, "#93c5fd")
-    // gradient.addColorStop(0.5, "#fdf2f8")
-    // gradient.addColorStop(0.75, "#fce7f3")
-    // gradient.addColorStop(1, "#fbcfe8") 
-    context.fillStyle = 'white' // or color
-    context.fillRect(0, 0, canvas.width, canvas.height)
+    if (backgroundImage.value) {
+      context.drawImage(backgroundImage.value, 0, 0, canvas.width, canvas.height)
+    } else {
+      // const gradient = context.createLinearGradient(0, 0, 0, canvas.height)
+      // gradient.addColorStop(0, "#bfdbfe")
+      // gradient.addColorStop(0.25, "#93c5fd")
+      // gradient.addColorStop(0.5, "#fdf2f8")
+      // gradient.addColorStop(0.75, "#fce7f3")
+      // gradient.addColorStop(1, "#fbcfe8") 
+      context.fillStyle = 'white' // or color
+      context.fillRect(0, 0, canvas.width, canvas.height)
+    }
     if (photoCanvases.value.length) {
       photoCanvases.value.forEach((image, index) => {
         const yCoordinate = index * height + (padding * (index + 1))
@@ -186,14 +191,15 @@ const generateImage = () => {
     // context.fillStyle = "#000"
     // // context.textAlign = "center"
     // context.fillText("memories", padding, canvas.height - (padding * 2.5))
+    if (!backgroundImage.value) {
+      context.font = "normal 48px 'Lavishly Yourst', cursive"
+      context.fillStyle = "#000"
+      context.fillText('memories ' + currentDate.value, padding, canvas.height - (padding * 4))
 
-    context.font = "normal 48px 'Lavishly Yourst', cursive"
-    context.fillStyle = "#000"
-    context.fillText('memories ' + currentDate.value, padding, canvas.height - (padding * 4))
-
-    context.font = "normal 36px 'Lavishly Yourst', cursive"
-    context.fillStyle = "#000"
-    context.fillText("www.withcu.com", padding, canvas.height - (padding * 2))
+      context.font = "normal 36px 'Lavishly Yourst', cursive"
+      context.fillStyle = "#000"
+      context.fillText("www.withcu.com", padding, canvas.height - (padding * 2))
+    }
   }
   console.log('hello')
   const dataUrl = canvas.toDataURL('image/png')
@@ -213,6 +219,33 @@ const saveImage = () => {
     a.click()
   }
 }
+
+const onChangeBackground = async (e: Event) => {
+  const target = e.target as HTMLInputElement
+  const file = target.files?.[0]
+  if (file) {
+    const imageUrl = URL.createObjectURL(file)
+    backgroundImage.value = await imageToCanvas(imageUrl)
+    generateImage()
+  }
+}
+
+const imageToCanvas = (imageSrc: string): Promise<HTMLCanvasElement> => {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d')!;
+      canvas.width = img.width;
+      canvas.height = img.height;
+      ctx.drawImage(img, 0, 0);
+      resolve(canvas);
+    };
+    img.onerror = reject;
+    img.src = imageSrc;
+  });
+};
 </script>
 
 
