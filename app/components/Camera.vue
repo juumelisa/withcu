@@ -40,6 +40,7 @@
           <img :src="printedImage" class="w-50"/>
         </div>
         <div class="absolute top-0 left-0 w-50 h-150 flex flex-col gap-2 p-2 bg-white/0">
+          <div v-if="stripNumber == 3" class="h-16" />
           <div
             v-for="index in stripNumber" :key="index" class="w-full h-32 group relative"
             :class="{
@@ -50,7 +51,9 @@
               <p class="italic text-gray-400">Your photo here</p>
             </div> -->
             <div v-if="imageUrls[index - 1]" class="hidden group-hover:block absolute top-0 left-0 bg-black/20 w-full h-full">
-              <button class="absolute top-2 right-2 bg-gray-100 rounded-full p-1">
+              <button
+                @click="deleteImage(index - 1)"
+                class="absolute top-2 right-2 bg-gray-100 rounded-full p-1">
                 <icons-trash class="size-5" />
               </button>
             </div>
@@ -68,14 +71,14 @@
         <button class="border border-gray-200">
           <icons-header class="size-10"/>
         </button>
-        <button class="border border-gray-200">
-          <icons-footer class="size-10"/>
-        </button>
+        <footer-option
+          @on-change-footer="onChangeFooter"
+          :background-image="printedImage" />
       </div>
     </div>
     <div class="fixed bottom-5 right-5 flex items-center gap-3">
       <button
-        @click="next"
+        @click="saveImage"
         class="py-3 px-5 flex items-center justify-center gap-2 bg-linear-to-r from-pink-100 to-blue-300 outline-0 rounded-full">
         <icons-next class="size-5" />
         <p>Next</p>
@@ -88,7 +91,7 @@
 const videoRef = ref<HTMLVideoElement | null>(null)
 const photoCanvas = ref<HTMLCanvasElement | null>(null)
 let stream: MediaStream | null = null
-const stripNumber = ref<number>(4)
+const stripNumber = ref<number>(3)
 const fullImages = ref<string>()
 const photoCanvases = ref<HTMLCanvasElement[]>([])
 const imageUrls = ref<string[]>([])
@@ -99,6 +102,7 @@ const restTime = ref<number>(5)
 const currentDate = ref<string>(new Date().toLocaleDateString())
 const printedImage = ref<string>()
 const backgroundImage = ref<HTMLCanvasElement>()
+const footerImage = ref<HTMLCanvasElement>()
 
 onMounted(async () => {
   try {
@@ -134,6 +138,10 @@ watch(imageUrls, (newValue) => {
   generateImage()
 }, { deep: true })
 
+watch(stripNumber, () => {
+  generateImage()
+})
+
 const capture = () => {
   startTimer.value = true
   const photoInterval = setInterval(() => {
@@ -142,8 +150,7 @@ const capture = () => {
     } else {
       clearInterval(photoInterval)
       if (videoRef.value && photoCanvas.value) {
-        const canvas = photoCanvas.value
-        photoCanvases.value.push(canvas)
+        const canvas = document.createElement('canvas')
         canvas.width = videoRef.value.videoWidth
         canvas.height = videoRef.value.videoHeight
         const ctx = canvas.getContext('2d')
@@ -152,6 +159,7 @@ const capture = () => {
             const dataUrl = canvas.toDataURL('image/png')
             imageUrls.value.push(dataUrl)
         }
+        photoCanvases.value.push(canvas)
       }
       startTimer.value = false
       restTime.value = 5
@@ -159,7 +167,7 @@ const capture = () => {
   }, 1000)
 }
 
-const generateImage = () => {
+const generateImage = async() => {
   const canvas = document.createElement('canvas')
   const context = canvas.getContext('2d')
   
@@ -168,7 +176,16 @@ const generateImage = () => {
   const padding = 24
   const width = 46 * 12
   const height = 32 * 12
+  const top = stripNumber.value == 3 ? 192 : 0
   if (context) {
+    if (photoCanvases.value.length) {
+      photoCanvases.value.forEach((image, index) => {
+        const yCoordinate = top + index * height + (padding * (index + 1))
+        context.drawImage(image, padding, yCoordinate, width, height)
+      })
+    }
+
+
     if (backgroundImage.value) {
       context.drawImage(backgroundImage.value, 0, 0, canvas.width, canvas.height)
     } else {
@@ -180,34 +197,49 @@ const generateImage = () => {
       // gradient.addColorStop(1, "#fbcfe8") 
       context.fillStyle = 'white' // or color
       context.fillRect(0, 0, canvas.width, canvas.height)
-    }
-    if (photoCanvases.value.length) {
-      photoCanvases.value.forEach((image, index) => {
-        const yCoordinate = index * height + (padding * (index + 1))
-        context.drawImage(image, padding, yCoordinate, width, height)
-      })
-    }
-    // context.font = "normal 36px 'Dancing Script', cursive"
-    // context.fillStyle = "#000"
-    // // context.textAlign = "center"
-    // context.fillText("memories", padding, canvas.height - (padding * 2.5))
-    if (!backgroundImage.value) {
-      context.font = "normal 48px 'Lavishly Yourst', cursive"
-      context.fillStyle = "#000"
-      context.fillText('memories ' + currentDate.value, padding, canvas.height - (padding * 4))
 
-      context.font = "normal 36px 'Lavishly Yourst', cursive"
+
+      await document.fonts.load("100px 'Lavishly Yours'")
+      await document.fonts.ready
+      if (top) {
+        context.font = "normal 100px 'Lavishly Yours', cursive"
+        context.fillStyle = "#000"
+        context.textAlign = "center"
+        context.fillText('Withcu', canvas.width / 2, padding * 4.5)
+
+        context.font = "normal 80px 'Lavishly Yours', cursive"
+        context.fillStyle = "#000"
+        context.fillText('photobooth', canvas.width / 2, padding * 7.5)
+      }
+
+      const fromBottom = top ? 80 : 0
+      context.font = "normal 100px 'Lavishly Yours', cursive"
       context.fillStyle = "#000"
-      context.fillText("www.withcu.com", padding, canvas.height - (padding * 2))
+      context.textAlign = "left"
+      context.fillText('Our Memories', padding, canvas.height - (padding * 3.6 + fromBottom))
+
+      context.font = "normal 45px 'Lavishly Yours', cursive"
+      context.fillStyle = "#000"
+      context.fillText(currentDate.value, padding, canvas.height - (padding + fromBottom))
+    }
+    if (footerImage.value) {
+      const width = canvas.width
+      console.log(footerImage.value.width, width)
+      const height = footerImage.value.height * (width / footerImage.value.width)
+      context.drawImage(footerImage.value, padding, canvas.height - height, width, height)
     }
   }
-  console.log('hello')
   const dataUrl = canvas.toDataURL('image/png')
   printedImage.value = dataUrl
 }
 
 const next = () => {
   console.log('next')
+}
+
+const deleteImage = (index: number) => {
+  const newImageArr = imageUrls.value.filter((el, idx) => index != idx)
+  imageUrls.value = newImageArr
 }
 
 const saveImage = () => {
@@ -226,6 +258,16 @@ const onChangeBackground = async (e: Event) => {
   if (file) {
     const imageUrl = URL.createObjectURL(file)
     backgroundImage.value = await imageToCanvas(imageUrl)
+    generateImage()
+  }
+}
+
+const onChangeFooter = async (e: Event) => {
+  const target = e.target as HTMLInputElement
+  const file = target.files?.[0]
+  if (file) {
+    const imageUrl = URL.createObjectURL(file)
+    footerImage.value = await imageToCanvas(imageUrl)
     generateImage()
   }
 }

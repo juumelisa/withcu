@@ -1,7 +1,7 @@
 <template>
   <div>
     <button @click="changeModalState" class="border border-gray-200">
-      <icons-background class="size-10" />
+      <icons-footer class="size-10" />
     </button>
     <div
         class="fixed inset-0 z-50 flex items-center justify-center p-5 transition-all duration-300 overflow-hidden"
@@ -55,7 +55,7 @@ const props = defineProps<Props>()
 const open = ref<boolean>(false)
 
 const emits = defineEmits<{
-  (e: 'onChangeBackground', value: Event): void
+  (e: 'onChangeFooter', value: Event): void
 }>()
 const changeModalState = () => {
   const newValue = !open.value
@@ -63,6 +63,6 @@ const changeModalState = () => {
 }
 
 const onChangeFile = (value: Event) => {
-  emits('onChangeBackground', value)
+  emits('onChangeFooter', value)
 }
 </script>
