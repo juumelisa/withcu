@@ -5,7 +5,12 @@
       <div class="flex">
         <div class="w-full">
           <div class="relative">
-            <video ref="videoRef" autoplay playsinline class="max-w-full" />
+            <video
+              ref="videoRef"
+              autoplay
+              playsinline
+              class="max-w-full"
+              :style="{ filter: selectedFilter[photoCanvases.length] }" />
             <div v-if="startTimer" class="absolute top-0 left-0 w-full h-full flex items-center justify-center opacity-30">
               <p class="text-white text-7xl">{{ restTime }}</p>
             </div>
@@ -19,6 +24,12 @@
             class="relative w-10 h-10 flex items-center justify-center cursor-pointer">
             <icons-timer class="size-7"/>
             <div class="w-4 h-4 absolute bottom-1 right-0.5 bg-black text-white rounded-full flex justify-center items-center text-xs">{{ defaultTimer }}</div>
+          </button>
+          <button
+            @click="changeFilter"
+            :disabled="startTimer"
+            class="relative w-10 h-10 flex items-center justify-center cursor-pointer">
+            <icons-filter class="size-7"/>
           </button>
         </div>
       </div>
@@ -115,6 +126,26 @@ const printedImage = ref<string>()
 const backgroundImage = ref<HTMLCanvasElement>()
 const footerImage = ref<HTMLCanvasElement>()
 
+const FILTER_BRIGHT_CLEAN = "brightness(1.15) contrast(1.1) saturate(1.1)";
+const FILTER_WARM_WEDDING = "brightness(1.1) contrast(1.05) saturate(1.25) sepia(0.15)";
+const FILTER_TEAL_ORANGE = "contrast(1.2) saturate(1.4) sepia(0.25) hue-rotate(-15deg)";
+const FILTER_BW = "grayscale(1) contrast(1.2) brightness(1.1)";
+const FILTER_PASTEL = "brightness(1.25) saturation(1.15) contrast(0.9) hue-rotate(15deg)";
+const FILTER_RETRO_FILM = "brightness(1.05) contrast(0.95) saturate(0.8) sepia(0.3)";
+const FILTER_PINK = "brightness(1.1) saturate(1.3) hue-rotate(25deg)";
+const FILTER_GLAM = "brightness(1.15) contrast(0.95) saturate(1.1) blur(1px)";
+const IG_CLARENDON = "brightness(1.1) contrast(1.3) saturate(1.35)";
+const IG_VALENCIA = "brightness(1.08) contrast(0.9) saturate(1.1) sepia(0.08)";
+const IG_JUNO = "brightness(1.12) contrast(1.15) saturate(1.4) hue-rotate(-5deg)";
+const IG_LARK = "brightness(1.25) contrast(1.1) saturate(0.9)";
+const IG_GINGHAM = "brightness(1.05) contrast(0.9) sepia(0.15)";
+const IG_ADEN = "brightness(1.1) contrast(0.9) saturate(0.85) sepia(0.1) hue-rotate(10deg)";
+const IG_REYES = "brightness(1.25) contrast(0.9) saturate(0.75)";
+const IG_WILLOW = "grayscale(1) brightness(1.1) contrast(0.9) sepia(0.1)";
+const IG_SLUMBER = "brightness(1.25) contrast(0.8) saturate(0.8) sepia(0.25)";
+const IG_CREMA = "brightness(1.1) contrast(0.9) saturate(0.9) sepia(0.05)";
+
+const selectedFilter = ref<string[]>([''])
 onMounted(async () => {
   try {
     stream = await navigator.mediaDevices.getUserMedia({
@@ -161,6 +192,10 @@ const changeDefaultTimer = () => {
   restTime.value = defaultTimer.value
 }
 
+const changeFilter = () => {
+  const currentIndex = photoCanvases.value.length
+  selectedFilter.value[currentIndex] = IG_ADEN
+}
 const capture = () => {
   startTimer.value = true
   const photoInterval = setInterval(() => {
@@ -174,6 +209,17 @@ const capture = () => {
         canvas.height = videoRef.value.videoHeight
         const ctx = canvas.getContext('2d')
         if (ctx) {
+            const newIndex = photoCanvases.value.length
+            if (!selectedFilter.value[newIndex] && selectedFilter.value[newIndex - 1]) {
+              selectedFilter.value[newIndex] = selectedFilter.value[newIndex - 1] || ''
+            }
+
+            if (selectedFilter.value[newIndex]) {
+              selectedFilter.value.push(selectedFilter.value[newIndex])
+            } else {
+              selectedFilter.value.push('')
+            }
+            // const currentFilter = selectedFilter.value[newIndex] ? selectedFilter.value[newIndex] : ''
             ctx.drawImage(videoRef.value, 0, 0, canvas.width, canvas.height)
             const dataUrl = canvas.toDataURL('image/png')
             imageUrls.value.push(dataUrl)
@@ -213,6 +259,11 @@ const generateImage = async() => {
     if (photoCanvases.value.length) {
       photoCanvases.value.forEach((image, index) => {
         const yCoordinate = top + (index * height) + (padding * (index + 1))
+        if (selectedFilter.value[index]) {
+          context.filter = selectedFilter.value[index]
+        } else {
+          context.filter = "none"
+        }
         context.drawImage(image, padding, yCoordinate, width, height)
       })
     }
@@ -244,7 +295,6 @@ const generateImage = async() => {
     }
     if (footerImage.value) {
       const width = canvas.width
-      console.log(footerImage.value.width, width)
       const height = footerImage.value.height * (width / footerImage.value.width)
       context.drawImage(footerImage.value, padding, canvas.height - height, width, height)
     }
@@ -260,8 +310,10 @@ const next = () => {
 const deleteImage = (index: number) => {
   const newImageArr = imageUrls.value.filter((el, idx) => index != idx)
   const newCanvasImage = photoCanvases.value.filter((el, idx) => index != idx)
+  const newFilter = selectedFilter.value.filter((el, idx) => index != idx)
   imageUrls.value = newImageArr
   photoCanvases.value = newCanvasImage
+  selectedFilter.value = newFilter
 }
 
 const saveImage = () => {
