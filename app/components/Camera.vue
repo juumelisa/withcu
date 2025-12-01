@@ -15,10 +15,35 @@
             <div v-if="startTimer" class="absolute top-0 left-0 w-full h-full flex items-center justify-center opacity-30">
               <p class="text-white text-7xl">{{ restTime }}</p>
             </div>
+            <div v-if="showFilterList" class="absolute bottom-0 flex gap-1">
+              <button
+                v-for="(filter, index) in filterList" :key="index"
+                @click="changeFilter(filter.filter)"
+                class=" cursor-pointer"
+                :class="{
+                  'bg-pink-600/50': filter.filter == selectedFilter[photoCanvases.length],
+                  'bg-black/50': filter.filter !== selectedFilter[photoCanvases.length],
+                }">
+                <div class="relative w-15 h-15">
+                  <img
+                    src="https://res.cloudinary.com/dme13qwgd/image/upload/v1752902754/samples/people/boy-snow-hoodie.jpg"
+                    class="h-full object-cover"
+                    :style="{ filter: filter.filter }"/>
+                </div>
+                <p class="text-white text-[8px] capitalize text-center">{{ filter.name }}</p>
+              </button>
+              <button class="bg-black/50 text-white text-[8px]">
+                <div class="w-15 h-15 flex justify-center items-center">
+                  <icons-next />
+                </div>
+                <p>More</p>
+              </button>
+            </div>
           </div>
           <p v-if="errorMessage" class="text-red-600 text-xl text-center">{{ errorMessage }}</p>
         </div>
 
+        <p class="text-white">{{selectedFilter[photoCanvases.length - 1]}}</p>
         <div class="w-full py-2 gap-5 flex justify-center items-center">
           <button
             @click="changeDefaultTimer"
@@ -31,7 +56,7 @@
             <icons-camera class="text-white size-6" />
           </button>
           <button
-            @click="changeFilter"
+            @click="changeFilterState"
             :disabled="startTimer"
             class="relative w-10 h-10 flex items-center justify-center cursor-pointer">
             <icons-filter class="size-7"/>
@@ -116,6 +141,42 @@ const currentDate = ref<string>(new Date().toLocaleDateString())
 const printedImage = ref<string>()
 const backgroundImage = ref<HTMLCanvasElement>()
 const footerImage = ref<HTMLCanvasElement>()
+const showFilterList = ref<boolean>(false)
+
+const filterList = ref<Record<string, any>[]>([
+  {
+    name: "no filter",
+    filter: ""
+  },
+  {
+    name: "bright clean",
+    filter: 'brightness(1.15) contrast(1.1) saturate(1.1)'
+  },
+  {
+    name: "warm wedding",
+    filter: 'brightness(1.1) contrast(1.05) saturate(1.25) sepia(0.15)'
+  },
+  {
+    name: "teal orange",
+    filter: 'contrast(1.2) saturate(1.4) sepia(0.25) hue-rotate(-15deg)'
+  },
+  {
+    name: "BW",
+    filter: 'grayscale(1) contrast(1.2) brightness(1.1)'
+  },
+  {
+    name: "pastel",
+    filter: 'brightness(1.25) saturation(1.15) contrast(0.9) hue-rotate(15deg)'
+  },
+  {
+    name: "retro film",
+    filter: "brightness(1.05) contrast(0.95) saturate(0.8) sepia(0.3)"
+  },
+  {
+    name: "pink",
+    filter: "brightness(1.1) saturate(1.3) hue-rotate(25deg)"
+  }
+])
 
 const FILTER_BRIGHT_CLEAN = "brightness(1.15) contrast(1.1) saturate(1.1)";
 const FILTER_WARM_WEDDING = "brightness(1.1) contrast(1.05) saturate(1.25) sepia(0.15)";
@@ -175,6 +236,11 @@ watch(stripNumber, () => {
   generateImage()
 })
 
+const changeFilterState = () => {
+  const newValue = !showFilterList.value
+  showFilterList.value = newValue
+}
+
 const changeDefaultTimer = () => {
   const availableTimer = [3, 5, 10]
   const currentTimerIndex = availableTimer.findIndex(el => el == defaultTimer.value)
@@ -183,10 +249,11 @@ const changeDefaultTimer = () => {
   restTime.value = defaultTimer.value
 }
 
-const changeFilter = () => {
+const changeFilter = (filter: string) => {
   const currentIndex = photoCanvases.value.length
-  selectedFilter.value[currentIndex] = IG_ADEN
+  selectedFilter.value[currentIndex] = filter
 }
+
 const capture = () => {
   startTimer.value = true
   const photoInterval = setInterval(() => {
