@@ -1,7 +1,8 @@
 <template>
   <div>
-    <button @click="changeModalState" class="border border-gray-200">
-      <icons-collage class="size-10" />
+    <button @click="changeModalState" class="w-full cursor-pointer p-3 flex flex-col justify-center items-center">
+      <icons-collage class="size-9" />
+      <p>Layout</p>
     </button>
     <div
         class="fixed inset-0 z-50 flex items-center justify-center p-5 transition-all duration-300 overflow-hidden"
@@ -31,11 +32,11 @@
           <div class="h-full overflow-y-auto p-5">
             <div class="w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
               <button
-                @click="changeStrip(4)"
+                @click="changeLayout('A')"
                 class="border border-gray-200 p-3 rounded flex justify-center items-center relative"
                 :class="{
-                  'border-pink-600': strip == 4,
-                  'border-gray-200': strip != 4
+                  'border-pink-600': selectedLayout == 'A',
+                  'border-gray-200': selectedLayout != 'A'
                 }">
                 <div class="relative z-20 w-15 h-48 p-0.5 flex flex-col gap-0.5 border rotate-5 bg-white">
                   <div class="w-full h-10 border" />
@@ -54,11 +55,11 @@
                 <div class="w-10" />
               </button>
               <button
-                @click="changeStrip(3)"
+                @click="changeLayout('B')"
                 class="border p-3 rounded flex justify-center items-center relative"
                 :class="{
-                  'border-pink-600': strip == 3,
-                  'border-gray-200': strip != 3
+                  'border-pink-600': selectedLayout == 'B',
+                  'border-gray-200': selectedLayout != 'B'
                 }">
                 <div class="relative z-10 w-15 h-48 p-0.5 flex flex-col gap-0.5 border rotate-2 bg-white">
                   <div class="w-full h-10 border" />
@@ -80,6 +81,38 @@
                 </div>
                 <div class="w-10" />
               </button>
+              <button
+                @click="changeLayout('C')"
+                class="border p-3 rounded flex justify-center items-center relative"
+                :class="{
+                  'border-pink-600': selectedLayout == 'C',
+                  'border-gray-200': selectedLayout != 'C'
+                }">
+                <div class="relative z-10 w-15 h-48 p-0.5 flex flex-col gap-0.5 border rotate-5 bg-white">
+                  <div class="w-full h-6 flex flex-col justify-center items-center">
+                    <p class="text-[8px]">witchu</p>
+                  </div>
+                  <div class="w-full h-10 border" />
+                  <div class="w-full h-10 border" />
+                  <div class="w-full h-10 border" />
+                  <div class="w-full h-6 flex flex-col justify-center items-center">
+                    <p class="text-[8px]">2025.12.01</p>
+                  </div>
+                </div>
+                <div class="absolute ml-10 z-20 w-15 h-48 p-0.5 flex flex-col gap-0.5 border bg-white">
+                  
+                  <div class="w-full h-6 flex flex-col justify-center items-center">
+                    <p class="text-[8px]">witchu</p>
+                  </div>
+                  <div class="w-full h-10 border" />
+                  <div class="w-full h-10 border" />
+                  <div class="w-full h-10 border" />
+                  <div class="w-full h-6 flex flex-col justify-center items-center">
+                    <p class="text-[8px]">2025.12.01</p>
+                  </div>
+                </div>
+                <div class="w-10" />
+              </button>
             </div>
           </div>
         </div>
@@ -88,16 +121,23 @@
 </template>
 
 <script setup lang="ts">
+type Layouts = {
+  header: boolean,
+  footer: boolean,
+  strip: number,
+  vertical: boolean
+}
 type Props = {
-  strip: number
+  layout: Layouts
 }
 
 const props = defineProps<Props>()
-const strip = ref<number>(props.strip)
+const currentLayout = ref<Layouts>(props.layout)
 const open = ref<boolean>(false)
+const selectedLayout = ref<string>('C')
 
 const emits = defineEmits<{
-  (e: 'update:strip', value: number): void
+  (e: 'update:layout', value: Layouts): void
 }>()
 
 const changeModalState = () => {
@@ -105,8 +145,35 @@ const changeModalState = () => {
   open.value = newValue
 }
 
-const changeStrip = (numberStrip: number) => {
-  strip.value = numberStrip
-  emits('update:strip', strip.value)
+const changeLayout = (type: string) => {
+  switch (type) {
+    case 'A':
+      currentLayout.value = {
+        header: false,
+        footer: true,
+        strip: 4,
+        vertical: true
+      }
+      break;
+    case 'B':
+      currentLayout.value = {
+        header: false,
+        footer: true,
+        strip: 3,
+        vertical: true
+      }
+      break;
+    default:
+      currentLayout.value = {
+        header: true,
+        footer: true,
+        strip: 3,
+        vertical: true
+      }
+      break;
+  }
+  selectedLayout.value = type
+  emits('update:layout', currentLayout.value)
+  open.value = false
 }
 </script>

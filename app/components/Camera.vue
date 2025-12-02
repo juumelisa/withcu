@@ -1,7 +1,9 @@
 
 <template>
-  <div class="w-full flex flex-col xl:flex-row xl:justify-between gap-5 p-5">
-    <div class="xl:w-1/5" />
+  <div class="w-full flex flex-col xl:flex-row xl:justify-between gap-5">
+    <div class="xl:w-1/5">
+      <sidebar />
+    </div>
     <div class="w-full lg:w-auto flex flex-col items-center">
       <div class="w-full flex flex-col">
         <div class="w-full">
@@ -52,7 +54,7 @@
             <icons-timer class="size-7"/>
             <div class="w-4 h-4 absolute bottom-1 right-0.5 bg-black text-white rounded-full flex justify-center items-center text-xs">{{ defaultTimer }}</div>
           </button>
-          <button @click="capture" :disabled="startTimer" class="w-14 h-14 bg-red-600 rounded-full flex items-center justify-center cursor-pointer disabled:cursor-default">
+          <button @click="capture" :disabled="startTimer || photoCanvases.length == stripNumber" class="w-14 h-14 bg-red-600 rounded-full flex items-center justify-center cursor-pointer disabled:cursor-default">
             <icons-camera class="text-white size-6" />
           </button>
           <button
@@ -103,17 +105,6 @@
           </div>
         </div>
       </div>
-      <div class="absolute top-10 right-0 w-10">
-        <background-option
-          @on-change-background="onChangeBackground"
-          :background-image="printedImage" />
-        <button class="border border-gray-200">
-          <icons-header class="size-10"/>
-        </button>
-        <footer-option
-          @on-change-footer="onChangeFooter"
-          :background-image="printedImage" />
-      </div>
     </div>
     <div class="fixed bottom-5 right-5 flex items-center gap-3">
       <button
@@ -163,10 +154,6 @@ const filterList = ref<Record<string, any>[]>([
   {
     name: "BW",
     filter: 'grayscale(1) contrast(1.2) brightness(1.1)'
-  },
-  {
-    name: "pastel",
-    filter: 'brightness(1.25) saturation(1.15) contrast(0.9) hue-rotate(15deg)'
   },
   {
     name: "retro film",
@@ -353,7 +340,8 @@ const generateImage = async() => {
     }
     if (footerImage.value) {
       const width = canvas.width
-      const height = footerImage.value.height * (width / footerImage.value.width)
+      const scale = footerImage.value.width / width
+      const height = footerImage.value.height * scale
       context.drawImage(footerImage.value, padding, canvas.height - height, width, height)
     }
   }
