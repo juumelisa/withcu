@@ -1,20 +1,25 @@
 <template>
   <div class="flex flex-col lg:flex-row gap-5">
     <div class="w-full lg:w-1/3 xl:w-2/4 flex">
-      <div class="w-20">
-        <layout-option
-          v-model:layout="currentLayout" />
-        <button class="w-20 flex flex-col items-center justify-center mb-3">
-          <icons-frame class="size-9" />
-          <p>Frame</p>
-        </button>
-        <button class="w-20 flex flex-col items-center justify-center">
-          <icons-text class="size-9" />
-          <p>Text</p>
+      <div class="w-20 flex flex-col gap-3 bg-blue-50">
+        <button
+          v-for="menu in menuList"
+          :key="menu.name"
+          @click="changeActiveMenu(menu.name)"
+          class="w-full flex flex-col items-center justify-center"
+          :class="{
+            'text-blue-400': menu.name == activeTab
+          }">
+          <component :is="menu.icon" class="size-9"/>
+          <p class="capitalize">{{ menu.name }}</p>
         </button>
       </div>
-      <div>
+      <div class="w-full bg-white border-r border-gray-200 h-dvh overflow-hidden">
+        <layout-option
+          v-if="activeTab === 'layout'"
+          v-model:layout="currentLayout" />
         <frame-option
+          v-if="activeTab === 'frame'"
           v-model:current-frame="currentFrame"
           :current-layout="currentLayout" />
       </div>
@@ -62,6 +67,10 @@
 </template>
 
 <script setup lang="ts">
+import Collage from '../icons/collage.vue';
+import Frame from '../icons/frame.vue';
+import Text from '../icons/text.vue';
+
 type Props = {
   imageUrls: string[],
   photoCanvases: HTMLCanvasElement[]
@@ -71,6 +80,7 @@ const props = defineProps<Props>()
 const selectedImages = ref<SelectedImage[]>([])
 const frameImage = ref<HTMLCanvasElement | null>()
 const printedImage = ref<string>('')
+const activeTab = ref<string>("layout")
 const currentDate = ref<string>(new Date().toLocaleDateString())
 const currentLayout = ref<any>({
   header: true,
@@ -88,6 +98,20 @@ const currentFrame = ref<Frame>({
   color: "white"
 })
 
+const menuList = ref([
+  {
+    name: "layout",
+    icon: Collage,
+  },
+  {
+    name: "frame",
+    icon: Frame
+  },
+  {
+    name: "text",
+    icon: Text
+  }
+])
 onMounted( () => {
   generateImage()
 })
@@ -102,6 +126,10 @@ watch(currentLayout, () => {
 watch(currentFrame, () => {
   generateImage()
 })
+
+const changeActiveMenu = (menu: string) => {
+  activeTab.value = menu
+}
 
 const generateImage = async() => {
   const canvas = document.createElement('canvas')
