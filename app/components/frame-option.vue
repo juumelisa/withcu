@@ -1,8 +1,8 @@
 <template>
-  <div class="h-full overflow-y-auto">
+  <div class="h-dvh overflow-y-auto border-r border-gray-200 p-5 bg-white">
     <div>
       <p>Basic</p>
-      <div class="w-full grid grid-cols-2 md:grid-cols-3 gap-2">
+      <div class="w-full grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-2">
         <button
           v-for="(color, index) in frameBasic"
           :key="color"
@@ -11,12 +11,19 @@
           <img
             v-if="frameBasicImages[index]"
             :src="frameBasicImages[index]"
-            class="w-20"
+            class="w-full"
             :class="{
               'border border-gray-200': color === 'white'
             }" />
           <p class="text-xs">{{color}}</p>
         </button>
+        <div class="w-full h-full flex items-center justify-center relative">
+          <icons-edit />
+          <input
+            type="color"
+            v-model="customColor"
+            class="w-full h-full absolute top-0 left-0 opacity-0" />
+        </div>
       </div>
     </div>
   </div>
@@ -33,7 +40,7 @@ type Props = {
 }
 
 const props = defineProps<Props>()
-
+const customColor = ref<string>()
 const frameBasic = ref<string[]>([
   'white', 'Pink', 'LightBlue', 'Lavender', 'DarkTurquoise'
 ])
@@ -53,6 +60,17 @@ watch(() => props.currentLayout, () => {
     generateImageBasic(index)
   })
 })
+
+// watch(customColor, (newValue) => {
+//   if (newValue) {
+//     if (!frameBasic.value.find(el => el == newValue)) {
+//       frameBasic.value.push(newValue)
+//     }
+//     frameBasic.value.forEach((color, index) => {
+//       generateImageBasic(index)
+//     })
+//   }
+// })
 
 const generateImageBasic = async (index: number) => {
   const color = frameBasic.value[index]

@@ -20,7 +20,7 @@
       </div>
     </div>
     <div class="w-full lg:w-1/3 xl:w-2/4 flex">
-      <div class="w-full p-5 flex justify-center">
+      <div class="w-full p-5 flex justify-center relative">
         <div class="w-auto relative">
           <img :src="printedImage" class="w-50 h-auto border border-gray-200"/>
           <div class="w-full h-full absolute top-0 left-0 px-2 flex flex-col">
@@ -43,6 +43,17 @@
             <div class="w-full"></div>
           </div>
 
+        </div>
+        <div class="absolute right-0 bottom-10">
+          <button
+            class="p-3 flex items-center justify-center gap-2 bg-white border border-gray-200 rounded-full mb-3">
+            <icons-camera class="size-6"/>
+          </button>
+          <button
+            @click="saveImage"
+            class="p-3 flex items-center justify-center gap-2 bg-linear-to-r from-pink-100 to-blue-300 text-blue-900 outline-0 rounded-full">
+            <icons-save class="size-6"/>
+          </button>
         </div>
       </div>
     </div>
@@ -205,6 +216,16 @@ const deleteImage = (index: number) => {
   const newImages = selectedImages.value.filter((el, idx) => idx != index)
   selectedImages.value = newImages
   generateImage()
+}
+
+const saveImage = () => {
+  generateImage()
+  if (printedImage.value) {
+    const a = document.createElement('a')
+    a.href = printedImage.value
+    a.download = 'photostrip.png'
+    a.click()
+  }
 }
 
 </script>
