@@ -1,13 +1,18 @@
 <template>
-  <div class="h-dvh overflow-y-auto border-r border-gray-200 p-5 bg-white">
+  <div class="h-full overflow-y-auto p-5">
+    <p>Frame</p>
+    <div class="grid grid-cols-3 gap-3 my-3">
+      <button class="w-full flex justify-center rounded-full bg-linear-to-r from-pink-100 to-blue-300 py-3">Basic</button>
+      <button>Image</button>
+      <button>Others</button>
+    </div>
     <div>
-      <p>Basic</p>
-      <div class="w-full grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-2">
+      <div class="w-full grid grid-cols-2 md:grid-cols-3 gap-2">
         <button
           v-for="(color, index) in frameBasic"
           :key="color"
           @click="changeFrame(color)"
-          class="flex flex-col justify-center items-center">
+          class="flex flex-col justify-center items-center border border-gray-200 p-5">
           <img
             v-if="frameBasicImages[index]"
             :src="frameBasicImages[index]"
