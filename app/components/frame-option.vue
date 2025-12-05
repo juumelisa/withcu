@@ -2,12 +2,20 @@
   <div class="h-full overflow-y-auto p-5">
     <p>Frame</p>
     <div class="grid grid-cols-3 gap-3 my-3">
-      <button class="w-full flex justify-center rounded-full bg-linear-to-r from-pink-100 to-blue-300 py-3">Basic</button>
-      <button>Image</button>
-      <button>Others</button>
+      <button
+        v-for="frame in frameOptionList"
+        :key="frame"
+        @click="changeCurrentFrame(frame)"
+        class="w-full flex justify-center rounded-full py-3 capitalize"
+        :class="{
+          'bg-white border border-gray-200': frame !== currentFrame,
+          'bg-linear-to-r from-pink-100 to-blue-300': frame === currentFrame
+        }">
+        {{ frame }}
+      </button>
     </div>
     <div>
-      <div class="w-full grid grid-cols-2 md:grid-cols-3 gap-2">
+      <div v-if="currentFrame === 'basic'" class="w-full grid grid-cols-2 md:grid-cols-3 gap-2">
         <button
           v-for="(color, index) in frameBasic"
           :key="color"
@@ -30,6 +38,17 @@
             class="w-full h-full absolute top-0 left-0 opacity-0" />
         </div>
       </div>
+      <div v-else-if="currentFrame === 'custom'">
+        <div class="w-full min-h-80 border border-dashed border-gray-200 p-5 flex flex-col justify-center items-center text-gray-500 relative">
+          <icons-save class="size-6 rotate-180" />
+          <p>Upload your file here</p>
+          <input
+            type="file"
+            accept=".png"
+            @change="onFileChange"
+            class="absolute top-0 left-0 w-full h-full opacity-0" />
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -37,7 +56,8 @@
 <script setup lang="ts">
 type Frame = {
   type: string,
-  color?: string
+  color?: string,
+  image?: HTMLCanvasElement
 }
 type Props = {
   currentFrame: Frame,
@@ -46,6 +66,10 @@ type Props = {
 
 const props = defineProps<Props>()
 const customColor = ref<string>()
+
+const frameOptionList = ['basic', 'custom', 'other']
+const currentFrame = ref<string>('basic')
+
 const frameBasic = ref<string[]>([
   'white', 'Pink', 'LightBlue', 'Lavender', 'DarkTurquoise'
 ])
@@ -95,6 +119,7 @@ const generateImageBasic = async (index: number) => {
       // gradient.addColorStop(0.5, "#fdf2f8")
       // gradient.addColorStop(0.75, "#fce7f3")
       // gradient.addColorStop(1, "#fbcfe8") 
+    // if (cu)
     context.fillStyle = color ?? 'white' // or color
     context.fillRect(0, 0, canvas.width, canvas.height)
     for (let x = 0; x < props.currentLayout.strip; x++) {
@@ -109,9 +134,45 @@ const generateImageBasic = async (index: number) => {
 }
 
 const changeFrame = (color?: string, image?: string) => {
+  console.log(color)
   emits('update:currentFrame', {
     color,
     type: "basic"
   })
+}
+const changeCurrentFrame = (frame: string) => {
+  currentFrame.value = frame
+}
+
+
+const imageToCanvas = (imageSrc: string): Promise<HTMLCanvasElement> => {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d')!;
+      canvas.width = img.width;
+      canvas.height = img.height;
+      ctx.drawImage(img, 0, 0);
+      resolve(canvas);
+    };
+    img.onerror = reject;
+    img.src = imageSrc;
+  });
+};
+
+const onFileChange = async(e: Event) => {
+  const target = e.target as HTMLInputElement
+  const file = target.files?.[0]
+  if (file) {
+    const imageUrl = URL.createObjectURL(file)
+    const canvasImage = await imageToCanvas(imageUrl)
+    emits('update:currentFrame', {
+      color: '',
+      type: 'custom',
+      image: canvasImage
+    })
+  }
 }
 </script>

@@ -39,10 +39,10 @@
             <div class="flex flex-col gap-2 h-full">
               <div v-for="(images, index) in selectedImages" :key="index" class="w-full h-30 group">
                 <div class="w-full h-2"></div>
-                <button
+                <!-- <button
                   @click="deleteImage(index)" class="hidden group-hover:bg-black/10 group-hover:flex justify-center items-center w-full h-full">
                   <icons-trash class="size-6 text-white"/>
-                </button>
+                </button> -->
               </div>
             </div>
             <div class="w-full"></div>
@@ -80,7 +80,7 @@
 <script setup lang="ts">
 import Collage from '../icons/collage.vue';
 import Frame from '../icons/frame.vue';
-import Text from '../icons/text.vue';
+import TOpt from '../icons/t-opt.vue';
 
 type Props = {
   imageUrls: string[],
@@ -102,14 +102,15 @@ const currentLayout = ref<any>({
 
 type Frame = {
   type: string,
-  color?: string
+  color?: string,
+  image?: HTMLCanvasElement
 }
 const currentFrame = ref<Frame>({
   type: "basic",
   color: "white"
 })
 
-const menuList = ref([
+const menuList = shallowRef([
   {
     name: "layout",
     icon: Collage,
@@ -120,7 +121,7 @@ const menuList = ref([
   },
   {
     name: "text",
-    icon: Text
+    icon: TOpt
   }
 ])
 onMounted( () => {
@@ -128,6 +129,7 @@ onMounted( () => {
 })
 
 watch(currentLayout, () => {
+  console.log(currentLayout)
   const strip = currentLayout.value.strip
   const newImages = selectedImages.value.filter((el, idx) => idx < strip)
   selectedImages.value = newImages
@@ -153,17 +155,18 @@ const generateImage = async() => {
   const height = 368
   const top = currentLayout.value.header ? 216 : 0
   if (context) {
-    if (frameImage.value) {
-      context.drawImage(frameImage.value, 0, 0, canvas.width, canvas.height)
-    } else {
       // const gradient = context.createLinearGradient(0, 0, 0, canvas.height)
       // gradient.addColorStop(0, "#bfdbfe")
       // gradient.addColorStop(0.25, "#93c5fd")
       // gradient.addColorStop(0.5, "#fdf2f8")
       // gradient.addColorStop(0.75, "#fce7f3")
       // gradient.addColorStop(1, "#fbcfe8") 
+    console.log(currentLayout.value)
+    if (currentFrame.value.type === 'basic') {
       context.fillStyle = currentFrame.value.color ?? "white" // or color
       context.fillRect(0, 0, canvas.width, canvas.height)
+    } else if (currentFrame.value.image) {
+      context.drawImage(currentFrame.value.image, 0, 0, canvas.width, canvas.height)
     }
     for (let x = 0; x < currentLayout.value.strip; x++) {
       const yCoordinate = top + (x * height) + (padding * (x + 1))
@@ -187,7 +190,7 @@ const generateImage = async() => {
     }
 
 
-    if (!frameImage.value) {
+    if (!currentFrame.value.image) {
       await document.fonts.load("100px 'Lavishly Yours'")
       await document.fonts.ready
       if (top) {
