@@ -15,27 +15,20 @@
       </button>
     </div>
     <div>
-      <div v-if="currentFrame === 'basic'" class="w-full grid grid-cols-2 md:grid-cols-3 gap-2">
+      <div v-if="currentFrame === 'basic'" class="w-full grid grid-cols-5 md:grid-cols-7 xl:grid-cols-9 gap-2">
         <button
           v-for="(color, index) in frameBasic"
           :key="color"
           @click="changeFrame(color)"
-          class="flex flex-col justify-center items-center border border-gray-200 p-5">
-          <img
-            v-if="frameBasicImages[index]"
-            :src="frameBasicImages[index]"
-            class="w-full"
-            :class="{
-              'border border-gray-200': color === 'white'
-            }" />
-          <p class="text-xs">{{color}}</p>
-        </button>
-        <div class="w-full h-full flex items-center justify-center relative">
+          class="cursor-pointer w-10 h-10 rounded-full"
+          :class="{
+            'border border-gray-200': currentFrameDetail.color !== color,
+            'border-3 border-red-600': currentFrameDetail.color === color
+          }"
+          :style="{ backgroundColor: color }" />
+        <div
+          class="cursor-pointer w-10 h-10 rounded-full border border-gray-200 flex justify-center items-center">
           <icons-edit />
-          <input
-            type="color"
-            v-model="customColor"
-            class="w-full h-full absolute top-0 left-0 opacity-0" />
         </div>
       </div>
       <div v-else-if="currentFrame === 'custom'">
@@ -60,7 +53,7 @@ type Frame = {
   image?: HTMLCanvasElement
 }
 type Props = {
-  currentFrame: Frame,
+  currentFrameDetail: Frame,
   currentLayout: any
 }
 
@@ -71,12 +64,21 @@ const frameOptionList = ['basic', 'custom', 'other']
 const currentFrame = ref<string>('basic')
 
 const frameBasic = ref<string[]>([
-  'white', 'Pink', 'LightBlue', 'Lavender', 'DarkTurquoise'
+  'white', 'whitesmoke',
+  'ivory', 'lemonchiffon', 'lightgoldenrodyellow', 'palegoldenrod',
+  'aliceblue', 'azure', 'lightblue', 'skyblue', 'lavenderblush',
+  'lightpink', 'Pink', 'lightcoral',
+  'tomato', 'orangered', 'red',
+  'Lavender', 'thistle', 'palevioletred',
+  'aquamarine', 'lightgreen', 'limegreen', 'DarkTurquoise', 'seagreen', 'teal', 'olive',
+  'slateblue', 'mediumblue', 'navy', 'midnightblue',
+  'slategray', 'gray', 'dimgray', 'darkslategray',
+  'black'
 ])
 
 const frameBasicImages = ref<string[]>([])
 const emits = defineEmits<{
-  (e: 'update:currentFrame', value: Frame): void
+  (e: 'update:currentFrameDetail', value: Frame): void
 }>()
 onMounted(() => {
   frameBasic.value.forEach((color, index) => {
@@ -90,17 +92,6 @@ watch(() => props.currentLayout, () => {
   })
 })
 
-// watch(customColor, (newValue) => {
-//   if (newValue) {
-//     if (!frameBasic.value.find(el => el == newValue)) {
-//       frameBasic.value.push(newValue)
-//     }
-//     frameBasic.value.forEach((color, index) => {
-//       generateImageBasic(index)
-//     })
-//   }
-// })
-
 const generateImageBasic = async (index: number) => {
   const color = frameBasic.value[index]
   const canvas = document.createElement('canvas')
@@ -113,13 +104,6 @@ const generateImageBasic = async (index: number) => {
   const height = 368
   const top = props.currentLayout.header ? 216 : 0
   if (context) {
-      // const gradient = context.createLinearGradient(0, 0, 0, canvas.height)
-      // gradient.addColorStop(0, "#bfdbfe")
-      // gradient.addColorStop(0.25, "#93c5fd")
-      // gradient.addColorStop(0.5, "#fdf2f8")
-      // gradient.addColorStop(0.75, "#fce7f3")
-      // gradient.addColorStop(1, "#fbcfe8") 
-    // if (cu)
     context.fillStyle = color ?? 'white' // or color
     context.fillRect(0, 0, canvas.width, canvas.height)
     for (let x = 0; x < props.currentLayout.strip; x++) {
@@ -134,8 +118,7 @@ const generateImageBasic = async (index: number) => {
 }
 
 const changeFrame = (color?: string, image?: string) => {
-  console.log(color)
-  emits('update:currentFrame', {
+  emits('update:currentFrameDetail', {
     color,
     type: "basic"
   })
@@ -168,7 +151,7 @@ const onFileChange = async(e: Event) => {
   if (file) {
     const imageUrl = URL.createObjectURL(file)
     const canvasImage = await imageToCanvas(imageUrl)
-    emits('update:currentFrame', {
+    emits('update:currentFrameDetail', {
       color: '',
       type: 'custom',
       image: canvasImage

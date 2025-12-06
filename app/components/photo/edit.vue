@@ -20,7 +20,7 @@
           v-model:layout="currentLayout" />
         <frame-option
           v-if="activeTab === 'frame'"
-          v-model:current-frame="currentFrame"
+          v-model:current-frame-detail="currentFrame"
           :current-layout="currentLayout" />
       </div>
     </div>
