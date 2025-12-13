@@ -8,7 +8,7 @@
     </div>
     <div class="w-full">
       <div class="w-full max-w-7xl mx-auto">
-        <div class="w-full flex flex-col-reverse md:flex-row justify-center md:justify-between items-center min-h-screen gap-10">
+        <div class="w-full flex flex-col-reverse lg:flex-row justify-center lg:justify-between items-center min-h-screen gap-10">
           <div>
             <h1 class="text-2xl md:text-3xl lg:text-5xl gap-1 mb-5 max-w-lg">
               Your personal <span class="text-pink-600">photobooth</span> studio!
@@ -25,14 +25,14 @@
             </div>
           </div>
           <div class="flex relative">
-            <div class="w-80 -rotate-6">
-              <img src="~/assets/images/landing-image2.png" class="" />
+            <div class="w-40 md:w-80 -rotate-6">
+              <img src="~/assets/images/landing-image2.png" alt="family photoboooth" />
             </div>
-            <div class="w-40 rotate-1">
-              <img src="~/assets/images/landing-image.png" class="" />
+            <div class="w-20 md:w-40 rotate-1">
+              <img src="~/assets/images/landing-image.png" alt="2 bestfriend photoboooth" />
             </div>
-            <div class="w-80 absolute left-0 bottom-10">
-              <img src="~/assets/images/landing-image3.png" class="" />
+            <div class="w-40 md:w-80 absolute left-0 bottom-5">
+              <img src="~/assets/images/landing-image3.png" alt="friends photoboooth" />
             </div>
           </div>
         </div>
