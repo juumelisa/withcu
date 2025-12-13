@@ -1,8 +1,9 @@
 <template>
   <div class="w-full min-h-full overflow-y-auto p-5 xl:p-0">
     <div class="flex w-full">
-      <div class="w-full max-w-7xl mx-auto flex justify-between py-3">
-        <img src="~/assets/images/logo.png" class="h-12" />
+      <div class="w-full max-w-7xl mx-auto flex justify-between py-3 font-semibold text-blue-900 text-xl">
+        <!-- <img src="~/assets/images/logo.png" class="h-12" /> -->
+         withcu
       </div>
     </div>
     <div class="w-full">
@@ -23,12 +24,15 @@
               </nuxt-link>
             </div>
           </div>
-          <div class="flex">
-            <div class="w-32 -rotate-1">
+          <div class="flex relative">
+            <div class="w-80 -rotate-6">
+              <img src="~/assets/images/landing-image2.png" class="" />
+            </div>
+            <div class="w-40 rotate-1">
               <img src="~/assets/images/landing-image.png" class="" />
             </div>
-            <div class="bg-gray-100 w-32 rotate-6">
-              <img src="~/assets/images/landing-image2.png" class="" />
+            <div class="w-80 absolute left-0 bottom-10">
+              <img src="~/assets/images/landing-image3.png" class="" />
             </div>
           </div>
         </div>
