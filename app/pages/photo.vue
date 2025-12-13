@@ -1,9 +1,9 @@
 <template>
   <div>
     <client-only>
-      <div class="w-full flex flex-col xl:flex-row">
+      <div class="w-full flex flex-col xl:flex-row gap-5">
         <div class="w-1/4 hidden xl:block" />
-        <div class="w-full xl:w-1/2 flex flex-col justify-center items-center">
+        <div class="w-full xl:w-1/2 flex flex-col items-center">
           <div class="relative">
             <video
               ref="videoRef"
@@ -24,7 +24,7 @@
             </button>
           </div>
         </div>
-        <div class="w-full xl:w-1/4 flex flex-col p-5">
+        <div class="w-full xl:w-1/4 flex flex-col items-center gap-5">
           <p class="font-medium text-base">Preview</p>
           <img
             :src="previewImage"
@@ -32,6 +32,9 @@
       </div>
       </div>
     </client-only>
+    <div v-if="isLoading" class="absolute top-0 left-0 w-full h-full bg-black/10 flex justify-center items-center">
+      <div class="w-10 h-10 border-4 border-pink-500 border-b-pink-600/30 rounded-full animate-spin" />
+    </div>
   </div>
 </template>
 
@@ -65,7 +68,7 @@ type CanvasSize = {
 
   const route = useRoute()
   const router = useRouter()
-
+  const isLoading = ref<boolean>(true)
   const videoRef = ref<HTMLVideoElement | null>(null)
   let stream: MediaStream | null = null
   const errorVideo = ref<boolean>(false)
@@ -105,24 +108,32 @@ type CanvasSize = {
     }
 
   try {
-    stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: 'user' } // front camera
-    })
+      stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: 'user',
+          width: { ideal: 1920 },
+          height: { ideal: 1080 },
+          aspectRatio: 16 / 9
+        },
+        audio: false
+      })
 
-    if (videoRef.value) {
-      videoRef.value.srcObject = stream
-      await videoRef.value.play()
+      if (videoRef.value) {
+        videoRef.value.srcObject = stream
+        await videoRef.value.play()
+      }
+      await convertFrameToCanvas()
+      isLoading.value = false
+    } catch (error: any) {
+      errorVideo.value = true
+      const message = error.message.toLowerCase()
+      if (message.includes('permission')) {
+        errorMessage.value = 'Cannot access camera. Please allow camera permissions in your browser settings and refresh the page.'
+      } else {
+        errorMessage.value = 'Oops.. something went wrong. Refresh the page to try again.'
+      }
+      isLoading.value = false
     }
-    await convertFrameToCanvas()
-  } catch (error: any) {
-    errorVideo.value = true
-    const message = error.message.toLowerCase()
-    if (message.includes('permission')) {
-      errorMessage.value = 'Cannot access camera. Please allow camera permissions in your browser settings and refresh the page.'
-    } else {
-      errorMessage.value = 'Oops.. something went wrong. Refresh the page to try again.'
-    }
-  }
   })
 
 
@@ -154,10 +165,13 @@ type CanvasSize = {
             canvasImage.width = slot.width
             canvasImage.height = slot.height
 
-            const scaleY = capturedImage.height * (slot.width / capturedImage.width)
+            const scale = Math.max(slot.width / capturedImage.width, slot.height / capturedImage.height)
+            const scaleX = capturedImage.width * scale
+            const scaleY = capturedImage.height * scale
             if (contextImage) {
+              const xCoor = (slot.width - scaleX) / 2
               const yCoor = (slot.height - scaleY) / 2
-              contextImage.drawImage(capturedImage, 0, yCoor, slot.width, scaleY)
+              contextImage.drawImage(capturedImage, xCoor, yCoor, scaleX, scaleY)
               context.drawImage(canvasImage, slot.x, slot.y, slot.width, slot.height)
             }
           } else {
