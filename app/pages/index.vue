@@ -17,7 +17,7 @@
             </p>
             <div class="w-60 mt-5">
               <nuxt-link
-                href="/photo"
+                href="/frame-selection"
                 class="py-3 px-5 flex items-center justify-center gap-2 bg-blue-900 text-white outline-0 rounded-full">
                 Get Started
               </nuxt-link>
