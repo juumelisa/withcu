@@ -12,7 +12,7 @@
                 playsinline
                 class="w-auto max-h-full lg:max-h-100 xl:max-h-full" />
               <div
-                v-if="startTimer"
+                v-if="startTimer && restTime"
                 class="absolute top-0 left-0 w-full h-full flex justify-center items-center text-white/50 text-7xl">
                 <p>{{ restTime }}</p>
               </div>
@@ -21,7 +21,7 @@
               class="bg-white mt-5 flex justify-center items-center">
               <button
                 @click="capture"
-                :disabled="selectedFrame.image.length >= selectedFrame.shots"
+                :disabled="selectedFrame.image.length >= selectedFrame.shots || startTimer"
                 class="text-white bg-red-600 disabled:bg-gray-400 p-3 rounded-full">
                 <icons-camera class="size-7" />
               </button>
@@ -42,7 +42,7 @@
           @click.self="changePreviewState"
           class="w-full h-full lg:w-1/4 fixed inset-0 lg:static bg-black/50 lg:bg-black/0 flex-col justify-center items-center gap-5 p-5"
           :class="{
-            'hidden lg:flex': !showPreview,
+            '-z-20 lg:flex': !showPreview,
             'flex': showPreview
           }">
           <div class="w-full max-w-lg bg-white lg:bg-white/0 p-5 rounded-2xl flex flex-col gap-5 md:justify-center items-center overflow-y-auto">
@@ -206,7 +206,11 @@ type CanvasSize = {
     }
   })
 
-
+  watch(showPreview, (newValue) => {
+    if (newValue) {
+      convertFrameToCanvas()
+    }
+  })
   const convertFrameToCanvas = async (): Promise<void> => {
     const frame = selectedFrame.value
     const canvas = document.createElement('canvas')
@@ -296,27 +300,33 @@ type CanvasSize = {
   };
 
   const capture = () => {
-    startTimer.value = true
-    const photoInterval = setInterval(() => {
-      if (restTime.value) {
-        restTime.value --
-      } else {
-        clearInterval(photoInterval)
-        if (videoRef.value) {
-          const canvas = document.createElement('canvas')
-          canvas.width = videoRef.value.videoWidth
-          canvas.height = videoRef.value.videoHeight
-          const ctx = canvas.getContext('2d')
-          if (ctx) {
-              ctx.drawImage(videoRef.value, 0, 0, canvas.width, canvas.height)
-              selectedFrame.value.image.push(canvas)
-              convertFrameToCanvas()
+    if (selectedFrame.value.image.length < selectedFrame.value.shots) {
+      startTimer.value = true
+      const photoInterval = setInterval(() => {
+        if (restTime.value) {
+          restTime.value --
+          if (restTime.value == 0) {
+            const audio = new Audio('/sounds/mixkit-camera-shutter-hard-click-1430.mp3')
+            audio.play()
           }
+        } else {
+          clearInterval(photoInterval)
+          if (videoRef.value) {
+            const canvas = document.createElement('canvas')
+            canvas.width = videoRef.value.videoWidth
+            canvas.height = videoRef.value.videoHeight
+            const ctx = canvas.getContext('2d')
+            if (ctx) {
+                ctx.drawImage(videoRef.value, 0, 0, canvas.width, canvas.height)
+                selectedFrame.value.image.push(canvas)
+                convertFrameToCanvas()
+            }
+          }
+          startTimer.value = false
+          restTime.value = defaultTimer.value
         }
-        startTimer.value = false
-        restTime.value = defaultTimer.value
-      }
-    }, 1000)
+      }, 1000)
+    }
   }
   const changeDeleteButtonState = (index?: number) => {
     if (index !== undefined && showDeleteButton.value && index == deleteButtonIndex.value) {
