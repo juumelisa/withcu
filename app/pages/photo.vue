@@ -1,5 +1,5 @@
 <template>
-  <div class="h-dvh overflow-hidden p-5">
+  <div class="h-screen overflow-hidden p-5">
     <client-only>
       <div
         class="w-full h-full flex flex-col lg:flex-row gap-5 justify-center items-center">
@@ -28,11 +28,14 @@
             </div>
           </div>
         </div>
-        <div class="absolute top-10 right-5 lg:hidden">
+        <div class="absolute top-5 right-5 lg:hidden">
           <button
             @click="changePreviewState"
-            class="text-white bg-pink-500 disabled:bg-gray-400 p-3 rounded-full">
+            class="text-white bg-pink-500 disabled:bg-gray-400 p-3 rounded-full relative">
             <icons-collage class="size-7"/>
+            <div v-if="selectedFrame.image.length" class="w-6 h-6 absolute -top-2 -right-1 rounded-full bg-red-600 text-white flex justify-center items-center text-sm">
+              {{ selectedFrame.image.length }}
+            </div>
           </button>
         </div>
         <div
@@ -47,7 +50,7 @@
             <div id="preview" class="relative">
               <img
                 :src="previewImage"
-                class="w-auto max-h-120" />
+                class="w-auto max-h-120 border border-gray-200" />
               <div class="absolute top-0 left-0 w-full h-full">
                 <div
                   v-for="(preview, index) in previewButtonStyle" :key="index" >
@@ -64,6 +67,19 @@
                   </div>
                 </div>
               </div>
+            </div>
+            <div
+              class="w-full flex items-center justify-center gap-5">
+              <button
+                @click="changePreviewState"
+                class="bg-white border border-gray-200 lg:hidden w-full py-2.5 rounded-full">
+                Close
+              </button>
+              <button
+                :disabled="selectedFrame.image.length < selectedFrame.shots"
+                class="bg-red-600 disabled:bg-gray-400 text-white w-full py-2.5 rounded-full">
+                Next
+              </button>
             </div>
           </div>
         </div>
@@ -257,6 +273,9 @@ type CanvasSize = {
 
     const dataUrl = canvas.toDataURL('image/png')
     previewImage.value = dataUrl
+    if (frame.image.length >= frame.shots) {
+      showPreview.value = true
+    }
   }
 
   const imageToCanvas = (imageSrc: string): Promise<HTMLCanvasElement> => {
