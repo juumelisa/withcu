@@ -76,6 +76,7 @@
                 Close
               </button>
               <button
+                @click="editPhoto"
                 :disabled="selectedFrame.image.length < selectedFrame.shots"
                 class="bg-red-600 disabled:bg-gray-400 text-white w-full py-2.5 rounded-full">
                 Next
@@ -282,23 +283,6 @@ type CanvasSize = {
     }
   }
 
-  const imageToCanvas = (imageSrc: string): Promise<HTMLCanvasElement> => {
-    return new Promise((resolve, reject) => {
-      const img = new Image();
-      img.crossOrigin = 'anonymous';
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d')!;
-        canvas.width = img.width;
-        canvas.height = img.height;
-        ctx.drawImage(img, 0, 0);
-        resolve(canvas);
-      };
-      img.onerror = reject;
-      img.src = imageSrc;
-    });
-  };
-
   const capture = () => {
     if (selectedFrame.value.image.length < selectedFrame.value.shots) {
       startTimer.value = true
@@ -347,6 +331,10 @@ type CanvasSize = {
   const changePreviewState = () => {
     const newState = !showPreview.value
     showPreview.value = newState
+  }
+
+  const editPhoto = () => {
+    localStorage.setItem("photoboothImage", previewImage.value)
   }
 </script>
 
