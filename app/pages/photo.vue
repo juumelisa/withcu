@@ -47,7 +47,7 @@
             <div id="preview" class="relative">
               <img
                 :src="previewImage"
-                class="w-full max-h-120" />
+                class="w-auto max-h-120" />
               <div class="absolute top-0 left-0 w-full h-full">
                 <div
                   v-for="(preview, index) in previewButtonStyle" :key="index" >
