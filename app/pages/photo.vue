@@ -1,7 +1,8 @@
 <template>
   <div>
     <client-only>
-      <div class="w-full flex flex-col xl:flex-row gap-5">
+      <div
+        class="w-full flex flex-col xl:flex-row gap-5">
         <div class="w-1/4 hidden xl:block" />
         <div class="w-full xl:w-1/2 flex flex-col items-center">
           <div class="relative">
@@ -26,9 +27,33 @@
         </div>
         <div class="w-full xl:w-1/4 flex flex-col items-center gap-5">
           <p class="font-medium text-base">Preview</p>
-          <img
-            :src="previewImage"
-            class="w-48" />
+          <div class="relative">
+            <img
+              :src="previewImage"
+              class="w-48" />
+            <div class="absolute top-0 left-0 w-full h-full">
+              <div
+                v-for="(slot, index) in selectedFrame.slots" :key="index" >
+                <div
+                  v-if="selectedFrame.image[index]"
+                  @click.self="changeDeleteButtonState(index)"
+                  class="absolute flex justify-center items-center"
+                  :style="{
+                    top: slot.y * (192 / selectedFrame.canvas.width) + 'px',
+                    left: slot.x * (192 / selectedFrame.canvas.width) + 'px',
+                    width: slot.width * (192 / selectedFrame.canvas.width) + 'px',
+                    height: slot.height * (192 / selectedFrame.canvas.width) + 'px'
+                  }">
+                  <button
+                    v-if="showDeleteButton && deleteButtonIndex == index"
+                    @click="deleteImage(index)"
+                    class="text-white rounded-full p-1 bg-black">
+                    <icons-trash class="size-5"/>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
       </div>
       </div>
     </client-only>
@@ -78,6 +103,8 @@ type CanvasSize = {
   const startTimer = ref<boolean>(false)
   const defaultTimer = ref<number>(3)
   const restTime = ref<number>(3)
+  const showDeleteButton = ref<boolean>(false)
+  const deleteButtonIndex = ref<number>()
   const selectedFrame = ref<Frame>({
     id: "valentine-4",
     name: "valentine 4 layout",
@@ -245,7 +272,20 @@ type CanvasSize = {
       }
     }, 1000)
   }
+  const changeDeleteButtonState = (index?: number) => {
+    if (index !== undefined && showDeleteButton.value && index == deleteButtonIndex.value) {
+      showDeleteButton.value = false
+      deleteButtonIndex.value = undefined
+    } else {
+      showDeleteButton.value = index !== undefined && index >= 0 ? true : false
+      deleteButtonIndex.value = index
+    }
+  }
 
+  const deleteImage = (index: number) => {
+    selectedFrame.value.image.splice(index, 1)
+    convertFrameToCanvas()
+  }
 </script>
 
 <style scoped>
