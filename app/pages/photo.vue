@@ -6,43 +6,49 @@
         v-else
         class="w-full h-full flex flex-col lg:flex-row gap-5 justify-center items-center">
         <div class="w-full lg:w-3/4 h-full flex flex-col justify-center items-center lg:items-end">
-          <div class="w-auto max-h-full bg-white rounded-2xl p-5 shadow">
-            <div class="relative">
-              <video
-                ref="videoRef"
-                autoplay
-                playsinline
-                class="w-auto max-h-full lg:max-h-100 xl:max-h-full" 
-                :style="{ filter: selectedFilter[selectedFrame.image.length] }" />
+          <div class="w-full max-w-2xl 2xl:max-w-5xl max-h-full bg-white rounded-2xl p-5 shadow">
+            <div
+              ref="containerRef"
+              class="relative w-full">
+              <div ref="stage" class="-scale-x-90 z-40">
+                <video
+                  ref="videoRef"
+                  autoplay
+                  playsinline
+                  class="hidden" 
+                  :style="{ filter: selectedFilter[selectedFrame.image.length] }" />
+              </div>
               <div
                 v-if="startTimer && restTime"
-                class="absolute top-0 left-0 w-full h-full flex justify-center items-center text-white/50 text-7xl">
+                class="absolute top-0 left-0 z-50 w-full h-full flex justify-center items-center text-white/50 text-7xl">
                 <p>{{ restTime }}</p>
               </div>
 
-              <div v-if="showFilterList" class="w-full absolute bottom-0 flex gap-1 justify-center items-center">
-                <button
-                  v-for="(filter, index) in filterList" :key="index"
-                  @click="changeFilter(filter.filter)"
-                  class=" cursor-pointer"
-                  :class="{
-                    'bg-pink-600/50': filter.filter == selectedFilter[selectedFrame.image.length],
-                    'bg-black/50': filter.filter !== selectedFilter[selectedFrame.image.length],
-                  }">
-                  <div class="relative w-15 h-15">
-                    <img
-                      src="https://res.cloudinary.com/dme13qwgd/image/upload/v1752902754/samples/people/boy-snow-hoodie.jpg"
-                      class="h-full object-cover"
-                      :style="{ filter: filter.filter }"/>
-                  </div>
-                  <p class="text-white text-[8px] capitalize text-center">{{ filter.name }}</p>
-                </button>
-                <button class="bg-black/50 text-white text-[8px]">
-                  <div class="w-15 h-15 flex justify-center items-center">
-                    <icons-next />
-                  </div>
-                  <p>More</p>
-                </button>
+              <div v-if="showFilterList" class="w-full absolute bottom-0 overflow-x-auto">
+                <div class="flex gap-1 md:justify-center md:items-center">
+                  <button
+                    v-for="(filter, index) in filterList" :key="index"
+                    @click="changeFilter(filter.filter)"
+                    class=" cursor-pointer"
+                    :class="{
+                      'bg-pink-600': filter.filter == selectedFilter[selectedFrame.image.length],
+                      'bg-black/50': filter.filter !== selectedFilter[selectedFrame.image.length],
+                    }">
+                    <div class="relative w-15 h-15">
+                      <img
+                        src="https://res.cloudinary.com/dme13qwgd/image/upload/v1752902754/samples/people/boy-snow-hoodie.jpg"
+                        class="h-full object-cover"
+                        :style="{ filter: filter.filter }"/>
+                    </div>
+                    <p class="text-white text-[8px] capitalize text-center">{{ filter.name }}</p>
+                  </button>
+                  <button class="bg-black/50 text-white text-[8px]">
+                    <div class="w-15 h-15 flex justify-center items-center">
+                      <icons-next />
+                    </div>
+                    <p>More</p>
+                  </button>
+                </div>
               </div>
             </div>
             <div
@@ -135,6 +141,8 @@
 </template>
 
 <script setup lang="ts">
+import * as PIXI from "pixi.js"
+import { ColorMatrixFilter } from "@pixi/filter-color-matrix"
 
 type CanvasSize = {
     width: number,
@@ -159,13 +167,17 @@ type CanvasSize = {
     canvas: CanvasSize,
     slots: ImageSettings[],
     background: BackgroundSettings,
-    image: HTMLCanvasElement[]
+    image: PIXI.ICanvas[]
   }
 
   const route = useRoute()
   const router = useRouter()
   const isLoading = ref<boolean>(true)
   const videoRef = ref<HTMLVideoElement | null>(null)
+  const containerRef = ref<HTMLDivElement | null>(null)
+  const stage = ref<HTMLDivElement | null>(null)
+  let app: PIXI.Application | null = null
+  let sprite: PIXI.Sprite | null = null
   let stream: MediaStream | null = null
   const errorVideo = ref<boolean>(false)
   const errorMessage = ref<string>('')
@@ -256,7 +268,7 @@ type CanvasSize = {
           facingMode: 'user',
           // width: { ideal: 1920 },
           // height: { ideal: 1440 },
-          // aspectRatio: 4 / 3
+          // aspectRatio: 16 / 9
         },
         audio: false
       })
@@ -264,10 +276,7 @@ type CanvasSize = {
       if (videoRef.value) {
         videoRef.value.srcObject = stream
         await videoRef.value.play()
-        const videoHeight = videoRef.value.clientHeight
-        clientWidth.value = window.innerWidth
-        clientHeight.value = window.innerHeight
-        videoYPosition.value = (innerHeight - videoHeight) / 2
+        await initPixi()
       }
       await convertFrameToCanvas()
       isLoading.value = false
@@ -282,12 +291,80 @@ type CanvasSize = {
       isLoading.value = false
     }
   })
+  onBeforeUnmount(() => {
+    window.removeEventListener("resize", resize)
 
+    if (stream) {
+      stream.getTracks().forEach(t => t.stop())
+    }
+
+    app?.destroy(true)
+  })
   watch(showPreview, (newValue) => {
     if (newValue) {
       convertFrameToCanvas()
     }
   })
+
+  const initPixi = async () => {
+    if (videoRef.value) {
+      app = new PIXI.Application()
+      await app.init({
+        resolution: window.devicePixelRatio,
+        backgroundAlpha: 0,
+        autoDensity: true
+      })
+      stage.value?.appendChild(app.canvas)
+      const texture = PIXI.Texture.from(videoRef.value!)
+      sprite = new PIXI.Sprite(texture)
+
+      const DESIGN_RATIO = videoRef.value.videoWidth / videoRef.value.videoHeight
+      const parentWidth = containerRef.value?.clientWidth || 300
+      const width = parentWidth
+      const height = Math.floor(width / DESIGN_RATIO)
+
+      app.renderer.resize(width, height)
+      sprite.width = width
+      sprite.height = height
+      sprite.anchor.set(0.5, 0.5)
+      sprite.position.set(app.screen.width / 2, app.screen.height / 2)
+      sprite.scale.x = -Math.abs(sprite.scale.x)
+
+      const filter = new PIXI.ColorMatrixFilter()
+
+      filter.brightness(1.15, false)
+      filter.contrast(1.5, false)
+      filter.saturate(1.1, false)
+      const blur = new PIXI.BlurFilter({
+        strength: 1,
+      })
+      sprite.filters = [filter, blur];
+
+      app.stage.addChild(sprite)
+      containerRef.value?.appendChild(app.canvas)
+      window.addEventListener("resize", resize)
+      const videoHeight = videoRef.value.clientHeight
+      clientWidth.value = window.innerWidth
+      clientHeight.value = window.innerHeight
+      videoYPosition.value = (innerHeight - videoHeight) / 2
+    }
+  }
+  function resize() {
+    if (!app || !sprite) return
+    if (videoRef.value) {
+      const DESIGN_RATIO = videoRef.value?.videoWidth / videoRef.value?.videoHeight
+      const parentWidth = containerRef.value?.clientWidth || 300
+      const width = parentWidth
+      const height = Math.floor(width / DESIGN_RATIO)
+
+      app.renderer.resize(width, height)
+
+      sprite.width = width
+      sprite.height = height
+    } else {
+      return
+    }
+  }
   const convertFrameToCanvas = async (): Promise<void> => {
     const frame = selectedFrame.value
     const canvas = document.createElement('canvas')
@@ -311,7 +388,7 @@ type CanvasSize = {
             xAxis = slot.x
           }
           xAxis = slot.x
-          const capturedImage = frame.image[x]
+          const capturedImage = frame.image[x] as HTMLCanvasElement
           if (capturedImage) {
             const canvasImage = document.createElement('canvas')
             const contextImage = canvasImage.getContext('2d')
@@ -373,16 +450,10 @@ type CanvasSize = {
           }
         } else {
           clearInterval(photoInterval)
-          if (videoRef.value) {
-            const canvas = document.createElement('canvas')
-            canvas.width = videoRef.value.videoWidth
-            canvas.height = videoRef.value.videoHeight
-            const ctx = canvas.getContext('2d')
-            if (ctx) {
-                ctx.drawImage(videoRef.value, 0, 0, canvas.width, canvas.height)
-                selectedFrame.value.image.push(canvas)
-                convertFrameToCanvas()
-            }
+          const resultCanvas = app?.renderer.extract.canvas(app.stage)
+          if (resultCanvas) {
+            selectedFrame.value.image.push(resultCanvas)
+            convertFrameToCanvas()
           }
           const prevIndex = selectedFrame.value.image.length - 1
           const prevFilter = selectedFilter.value[prevIndex] || "none"
@@ -439,9 +510,3 @@ type CanvasSize = {
   }
 
 </script>
-
-<style scoped>
-  video {
-    transform: scaleX(-1);
-  }
-</style>
