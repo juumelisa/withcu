@@ -1,7 +1,9 @@
 <template>
   <div class="h-screen overflow-hidden p-5">
     <client-only>
+      <photo-editor v-if="isEdit" />
       <div
+        v-else
         class="w-full h-full flex flex-col lg:flex-row gap-5 justify-center items-center">
         <div class="w-full lg:w-3/4 h-full flex flex-col justify-center items-center lg:items-end">
           <div class="w-auto max-h-full bg-white rounded-2xl p-5 shadow">
@@ -10,20 +12,61 @@
                 ref="videoRef"
                 autoplay
                 playsinline
-                class="w-auto max-h-full lg:max-h-100 xl:max-h-full" />
+                class="w-auto max-h-full lg:max-h-100 xl:max-h-full" 
+                :style="{ filter: selectedFilter[selectedFrame.image.length] }" />
               <div
                 v-if="startTimer && restTime"
                 class="absolute top-0 left-0 w-full h-full flex justify-center items-center text-white/50 text-7xl">
                 <p>{{ restTime }}</p>
               </div>
+
+              <div v-if="showFilterList" class="w-full absolute bottom-0 flex gap-1 justify-center items-center">
+                <button
+                  v-for="(filter, index) in filterList" :key="index"
+                  @click="changeFilter(filter.filter)"
+                  class=" cursor-pointer"
+                  :class="{
+                    'bg-pink-600/50': filter.filter == selectedFilter[selectedFrame.image.length],
+                    'bg-black/50': filter.filter !== selectedFilter[selectedFrame.image.length],
+                  }">
+                  <div class="relative w-15 h-15">
+                    <img
+                      src="https://res.cloudinary.com/dme13qwgd/image/upload/v1752902754/samples/people/boy-snow-hoodie.jpg"
+                      class="h-full object-cover"
+                      :style="{ filter: filter.filter }"/>
+                  </div>
+                  <p class="text-white text-[8px] capitalize text-center">{{ filter.name }}</p>
+                </button>
+                <button class="bg-black/50 text-white text-[8px]">
+                  <div class="w-15 h-15 flex justify-center items-center">
+                    <icons-next />
+                  </div>
+                  <p>More</p>
+                </button>
+              </div>
             </div>
             <div
-              class="bg-white mt-5 flex justify-center items-center">
+              class="bg-white mt-5 gap-5 flex justify-center items-center">
+              <button
+                :disabled="startTimer"
+                @click="changeDefaultTimer"
+                class="p-3 rounded-full relative">
+                <icons-timer class="size-7" />
+                <div class="absolute bottom-1 right-1 w-5 h-5 bg-red-600 text-white rounded-full flex justify-center items-center text-xs">
+                  <p>{{ defaultTimer }}</p>
+                </div>
+              </button>
               <button
                 @click="capture"
                 :disabled="selectedFrame.image.length >= selectedFrame.shots || startTimer"
                 class="text-white bg-red-600 disabled:bg-gray-400 p-3 rounded-full">
                 <icons-camera class="size-7" />
+              </button>
+              <button
+                @click="changeFilterState"
+                :disabled="startTimer"
+                class="p-3 rounded-full relative">
+                <icons-filter class="size-7" />
               </button>
             </div>
           </div>
@@ -40,10 +83,9 @@
         </div>
         <div
           @click.self="changePreviewState"
-          class="w-full h-full lg:w-1/4 fixed inset-0 lg:static bg-black/50 lg:bg-black/0 flex-col justify-center items-center gap-5 p-5"
+          class="w-full h-full lg:w-1/4 fixed inset-0 lg:static bg-black/50 lg:bg-black/0 flex flex-col justify-center items-center gap-5 p-5"
           :class="{
-            '-z-20 lg:flex': !showPreview,
-            'flex': showPreview
+            '-z-20 lg:z-30': !showPreview
           }">
           <div class="w-full max-w-lg bg-white lg:bg-white/0 p-5 rounded-2xl flex flex-col gap-5 md:justify-center items-center overflow-y-auto">
             <p class="font-semibold text-lg">Preview</p>
@@ -132,8 +174,42 @@ type CanvasSize = {
   const startTimer = ref<boolean>(false)
   const defaultTimer = ref<number>(3)
   const restTime = ref<number>(3)
+  const isEdit = ref<boolean>(false)
   const showDeleteButton = ref<boolean>(false)
   const deleteButtonIndex = ref<number>()
+
+  const selectedFilter = ref<string[]>(['none'])
+  const showFilterList = ref<boolean>(false)
+  const filterList = ref<Record<string, any>[]>([
+    {
+      name: "no filter",
+      filter: "none"
+    },
+    {
+      name: "bright clean",
+      filter: 'brightness(1.15) contrast(1.1) saturate(1.1)'
+    },
+    {
+      name: "warm wedding",
+      filter: 'brightness(1.1) contrast(1.05) saturate(1.25) sepia(0.15)'
+    },
+    {
+      name: "teal orange",
+      filter: 'contrast(1.2) saturate(1.4) sepia(0.25) hue-rotate(-15deg)'
+    },
+    {
+      name: "BW",
+      filter: 'grayscale(1) contrast(1.2) brightness(1.1)'
+    },
+    {
+      name: "retro film",
+      filter: "brightness(1.05) contrast(0.95) saturate(0.8) sepia(0.3)"
+    },
+    {
+      name: "pink",
+      filter: "brightness(1.1) saturate(1.3) hue-rotate(25deg)"
+    }
+  ])
   const videoYPosition = ref<number>(0)
   const clientWidth = ref<number>(0)
   const clientHeight = ref<number>(0)
@@ -174,7 +250,7 @@ type CanvasSize = {
       router.push('/frame-selection')
     }
 
-  try {
+    try {
       stream = await navigator.mediaDevices.getUserMedia({
         video: {
           facingMode: 'user',
@@ -249,6 +325,8 @@ type CanvasSize = {
             if (contextImage) {
               const xCoor = (slot.width - scaleX) / 2
               const yCoor = (slot.height - scaleY) / 2
+              const filter = selectedFilter.value[x] || "none"
+              contextImage.filter = filter
               contextImage.drawImage(capturedImage, xCoor, yCoor, scaleX, scaleY)
               context.drawImage(canvasImage, slot.x, slot.y, slot.width, slot.height)
 
@@ -306,6 +384,9 @@ type CanvasSize = {
                 convertFrameToCanvas()
             }
           }
+          const prevIndex = selectedFrame.value.image.length - 1
+          const prevFilter = selectedFilter.value[prevIndex] || "none"
+          selectedFilter.value[prevIndex + 1] = prevFilter
           startTimer.value = false
           restTime.value = defaultTimer.value
         }
@@ -324,6 +405,7 @@ type CanvasSize = {
 
   const deleteImage = async(index: number) => {
     selectedFrame.value.image.splice(index, 1)
+    selectedFilter.value.splice(index, 1)
     previewButtonStyle.value = []
     showDeleteButton.value = false
     await convertFrameToCanvas()
@@ -334,8 +416,28 @@ type CanvasSize = {
   }
 
   const editPhoto = () => {
-    localStorage.setItem("photoboothImage", previewImage.value)
+    isEdit.value = true
   }
+  const changeDefaultTimer = () => {
+    if (defaultTimer.value == 3) {
+      defaultTimer.value = 5
+    } else if (defaultTimer.value == 5) {
+      defaultTimer.value = 10
+    } else {
+      defaultTimer.value = 3
+    }
+    restTime.value = defaultTimer.value
+  }
+  const changeFilterState = () => {
+    const newValue = !showFilterList.value
+    showFilterList.value = newValue
+  }
+
+  const changeFilter = (filter: string) => {
+    const currentIndex = selectedFrame.value.image.length
+    selectedFilter.value[currentIndex] = filter
+  }
+
 </script>
 
 <style scoped>

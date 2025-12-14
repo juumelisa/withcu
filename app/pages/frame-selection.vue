@@ -90,7 +90,7 @@
         {x: 30, y: 1200, width: 540, height: 360}
       ],
       background: {
-        color: 'white',
+        color: 'black',
         image: null,
         customizeable: true,
         overlay: false
@@ -111,7 +111,7 @@
         {x: 30, y: 605, width: 855, height: 555},
       ],
       background: {
-        color: 'white',
+        color: 'black',
         image: null,
         customizeable: true,
         overlay: false
@@ -132,7 +132,7 @@
         {x: 30, y: 810, width: 540, height: 360}
       ],
       background: {
-        color: 'white',
+        color: 'black',
         image: null,
         customizeable: true,
         overlay: false
@@ -153,7 +153,7 @@
         {x: 30, y: 1110, width: 540, height: 360}
       ],
       background: {
-        color: 'white',
+        color: 'black',
         image: null,
         customizeable: true,
         overlay: false
