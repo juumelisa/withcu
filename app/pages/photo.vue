@@ -2,18 +2,23 @@
   <div class="h-dvh overflow-hidden p-5">
     <client-only>
       <div
-        class="w-full h-full flex flex-col xl:flex-row gap-5 justify-center items-center">
-        <div class="w-full lg:w-3/4 flex flex-col justify-center items-center">
-          <div class="bg-white rounded-2xl p-5 shadow">
+        class="w-full h-full flex flex-col lg:flex-row gap-5 justify-center items-center">
+        <div class="w-full lg:w-3/4 h-full flex flex-col justify-center items-center lg:items-end">
+          <div class="w-auto max-h-full bg-white rounded-2xl p-5 shadow">
             <div class="relative">
               <video
                 ref="videoRef"
                 autoplay
                 playsinline
-                class="max-h-full" />
+                class="w-auto max-h-full lg:max-h-100 xl:max-h-full" />
+              <div
+                v-if="startTimer"
+                class="absolute top-0 left-0 w-full h-full flex justify-center items-center text-white/50 text-7xl">
+                <p>{{ restTime }}</p>
+              </div>
             </div>
             <div
-              class="bg-white p-5 flex justify-center items-center">
+              class="bg-white mt-5 flex justify-center items-center">
               <button
                 @click="capture"
                 :disabled="selectedFrame.image.length >= selectedFrame.shots"
@@ -23,64 +28,45 @@
             </div>
           </div>
         </div>
-        <!-- <div class="w-full max-w-3xl lg:w-2/3 xl:w-1/2 h-full flex justify-center items-center">
-          <div class="w-auto flex flex-col items-center bg-white shadow rounded-2xl p-5 relative">
-            <div class="relative">
-              <video
-                ref="videoRef"
-                autoplay
-                playsinline
-                class="w-auto h-100 max-h-full xl:h-auto" />
-              <div
-                v-if="startTimer"
-                class="absolute top-0 left-0 w-full h-full flex justify-center items-center text-white/50 text-7xl">
-                <p>{{ restTime }}</p>
-              </div>
-              <div
-                class="md:hidden w-full absolute top-0 left-0 bg-white"
-                :style="{
-                  height: '100px'
-                }" />
-              <div
-                class="md:hidden w-full absolute bottom-0 left-0 bg-white"
-                :style="{
-                  height: '100px'
-                }" />
-            </div>
-            <div class="flex justify-center items-center mt-5">
-              <button
-                @click="capture"
-                :disabled="selectedFrame.image.length >= selectedFrame.shots"
-                class="text-white bg-red-600 disabled:bg-gray-400 p-3 rounded-full">
-                <icons-camera class="size-7" />
-              </button>
-            </div>
-          </div>
-        </div> -->
-        <!-- <div class="w-full lg:w-1/3 xl:w-1/4 hidden lg:flex flex-col items-center gap-5">
-          <p class="font-medium text-base">Preview</p>
-          <div id="preview" class="relative max-h-100">
-            <img
-              :src="previewImage"
-              class="max-h-96" />
-            <div class="absolute top-0 left-0 w-full h-full">
-              <div
-                v-for="(preview, index) in previewButtonStyle" :key="index" >
+        <div class="absolute top-10 right-5 lg:hidden">
+          <button
+            @click="changePreviewState"
+            class="text-white bg-pink-500 disabled:bg-gray-400 p-3 rounded-full">
+            <icons-collage class="size-7"/>
+          </button>
+        </div>
+        <div
+          @click.self="changePreviewState"
+          class="w-full h-full lg:w-1/4 fixed inset-0 lg:static bg-black/50 lg:bg-black/0 flex-col justify-center items-center gap-5 p-5"
+          :class="{
+            'hidden lg:flex': !showPreview,
+            'flex': showPreview
+          }">
+          <div class="w-full max-w-lg bg-white lg:bg-white/0 p-5 rounded-2xl flex flex-col gap-5 justify-center items-center">
+            <p class="font-semibold text-lg">Preview</p>
+            <div id="preview" class="relative">
+              <img
+                :src="previewImage"
+                class="w-full max-h-120" />
+              <div class="absolute top-0 left-0 w-full h-full">
                 <div
-                  @click.self="changeDeleteButtonState(index)"
-                  class="absolute flex justify-center items-center"
-                  :style="preview">
-                  <button
-                    v-if="showDeleteButton && deleteButtonIndex == index"
-                    @click="deleteImage(index)"
-                    class="text-white rounded-full p-1 bg-black">
-                    <icons-trash class="size-5"/>
-                  </button>
+                  v-for="(preview, index) in previewButtonStyle" :key="index" >
+                  <div
+                    @click.self="changeDeleteButtonState(index)"
+                    class="absolute flex justify-center items-center"
+                    :style="preview">
+                    <button
+                      v-if="showDeleteButton && deleteButtonIndex == index"
+                      @click="deleteImage(index)"
+                      class="text-white rounded-full p-1 bg-black">
+                      <icons-trash class="size-5"/>
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-        </div> -->
+        </div>
       </div>
     </client-only>
     <div v-if="isLoading" class="absolute top-0 left-0 w-full h-full bg-black/10 flex justify-center items-center">
@@ -125,7 +111,7 @@ type CanvasSize = {
   const errorVideo = ref<boolean>(false)
   const errorMessage = ref<string>('')
   const previewImage = ref<string>('')
-
+  const showPreview = ref<boolean>(false)
   const startTimer = ref<boolean>(false)
   const defaultTimer = ref<number>(3)
   const restTime = ref<number>(3)
@@ -328,6 +314,10 @@ type CanvasSize = {
     previewButtonStyle.value = []
     showDeleteButton.value = false
     await convertFrameToCanvas()
+  }
+  const changePreviewState = () => {
+    const newState = !showPreview.value
+    showPreview.value = newState
   }
 </script>
 
