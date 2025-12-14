@@ -45,7 +45,7 @@
             'hidden lg:flex': !showPreview,
             'flex': showPreview
           }">
-          <div class="w-full max-w-lg bg-white lg:bg-white/0 p-5 rounded-2xl flex flex-col gap-5 justify-center items-center">
+          <div class="w-full max-w-lg bg-white lg:bg-white/0 p-5 rounded-2xl flex flex-col gap-5 md:justify-center items-center overflow-y-auto">
             <p class="font-semibold text-lg">Preview</p>
             <div id="preview" class="relative">
               <img
