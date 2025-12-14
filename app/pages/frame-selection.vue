@@ -100,7 +100,7 @@
     {
       id: "basic-4-2",
       name: "basic 4-2 layout",
-      shots: 4,
+      shots: 3,
       canvas: {
         width: 1800,
         height: 1200

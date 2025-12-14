@@ -1,49 +1,46 @@
 <template>
-  <div>
+  <div class="max-h-dvh overflow-hidden p-5">
     <client-only>
       <div
-        class="w-full flex flex-col xl:flex-row gap-5">
+        class="w-full flex flex-col lg:flex-row gap-5 items-center">
         <div class="w-1/4 hidden xl:block" />
-        <div class="w-full xl:w-1/2 flex flex-col items-center">
-          <div class="relative">
-            <video
-              ref="videoRef"
-              autoplay
-              playsinline
-              class="max-w-full" />
-            <div
-              v-if="startTimer"
-              class="absolute top-0 left-0 w-full h-full flex justify-center items-center text-white/50 text-7xl">
-              <p>{{ restTime }}</p>
+        <div class="w-full max-w-3xl lg:w-2/3 xl:w-1/2">
+          <div class="w-auto flex flex-col items-center bg-white shadow rounded-2xl p-5">
+            <div class="relative">
+              <video
+                ref="videoRef"
+                autoplay
+                playsinline
+                class="max-w-full" />
+              <div
+                v-if="startTimer"
+                class="absolute top-0 left-0 w-full h-full flex justify-center items-center text-white/50 text-7xl">
+                <p>{{ restTime }}</p>
+              </div>
+            </div>
+            <div class="flex justify-center items-center mt-5">
+              <button
+                @click="capture"
+                :disabled="selectedFrame.image.length >= selectedFrame.shots"
+                class="text-white bg-red-600 disabled:bg-gray-400 p-3 rounded-full">
+                <icons-camera class="size-7" />
+              </button>
             </div>
           </div>
-          <div class="w-full flex justify-center items-center mt-5">
-            <button
-              @click="capture"
-              class="text-white bg-red-600 p-3 rounded-full">
-              <icons-camera class="size-7" />
-            </button>
-          </div>
         </div>
-        <div class="w-full xl:w-1/4 flex flex-col items-center gap-5">
+        <div class="w-full lg:w-1/3 xl:w-1/4 flex flex-col items-center gap-5">
           <p class="font-medium text-base">Preview</p>
-          <div class="relative">
+          <div id="preview" class="relative max-h-100">
             <img
               :src="previewImage"
-              class="w-48" />
+              class="max-h-96" />
             <div class="absolute top-0 left-0 w-full h-full">
               <div
-                v-for="(slot, index) in selectedFrame.slots" :key="index" >
+                v-for="(preview, index) in previewButtonStyle" :key="index" >
                 <div
-                  v-if="selectedFrame.image[index]"
                   @click.self="changeDeleteButtonState(index)"
                   class="absolute flex justify-center items-center"
-                  :style="{
-                    top: slot.y * (192 / selectedFrame.canvas.width) + 'px',
-                    left: slot.x * (192 / selectedFrame.canvas.width) + 'px',
-                    width: slot.width * (192 / selectedFrame.canvas.width) + 'px',
-                    height: slot.height * (192 / selectedFrame.canvas.width) + 'px'
-                  }">
+                  :style="preview">
                   <button
                     v-if="showDeleteButton && deleteButtonIndex == index"
                     @click="deleteImage(index)"
@@ -106,8 +103,8 @@ type CanvasSize = {
   const showDeleteButton = ref<boolean>(false)
   const deleteButtonIndex = ref<number>()
   const selectedFrame = ref<Frame>({
-    id: "valentine-4",
-    name: "valentine 4 layout",
+    id: "basic-4",
+    name: "basic 4 layout",
     shots: 4,
     canvas: {
       width: 600,
@@ -121,12 +118,20 @@ type CanvasSize = {
     ],
     background: {
       color: 'white',
-      image: 'https://res.cloudinary.com/dme13qwgd/image/upload/v1765635678/image_copy_9_fhkopu.png',
+      image: null,
       customizeable: true,
-      overlay: true
+      overlay: false
     },
     image: []
   })
+
+  type PreviewStyle = {
+    top: string,
+    left: string,
+    width: string,
+    height: string
+  }
+  const previewButtonStyle = ref<PreviewStyle[]>([])
 
   onMounted(async () => {
     if (route.query.frame) {
@@ -138,9 +143,9 @@ type CanvasSize = {
       stream = await navigator.mediaDevices.getUserMedia({
         video: {
           facingMode: 'user',
-          width: { ideal: 1920 },
-          height: { ideal: 1080 },
-          aspectRatio: 16 / 9
+          // width: { ideal: 1920 },
+          // height: { ideal: 1440 },
+          // aspectRatio: 4 / 3
         },
         audio: false
       })
@@ -171,6 +176,9 @@ type CanvasSize = {
 
     canvas.width = frame.canvas.width
     canvas.height = frame.canvas.height
+
+    const previewWidth = document.getElementById('preview')?.clientWidth || 0
+
     let xAxis = 0
     if (context) {
       if (frame.background.color) {
@@ -200,6 +208,14 @@ type CanvasSize = {
               const yCoor = (slot.height - scaleY) / 2
               contextImage.drawImage(capturedImage, xCoor, yCoor, scaleX, scaleY)
               context.drawImage(canvasImage, slot.x, slot.y, slot.width, slot.height)
+
+              const previewStyle: PreviewStyle = {
+                top: slot.y * (previewWidth / canvas.width) + 'px',
+                left: slot.x * (previewWidth / canvas.width) + 'px',
+                width: slot.width * (previewWidth / canvas.width) + 'px',
+                height: slot.height * (previewWidth / canvas.width) + 'px'
+              }
+              previewButtonStyle.value[x] = previewStyle
             }
           } else {
             context.fillStyle = '#F3F3F3'
@@ -251,17 +267,6 @@ type CanvasSize = {
           canvas.height = videoRef.value.videoHeight
           const ctx = canvas.getContext('2d')
           if (ctx) {
-              // const newIndex = photoCanvases.value.length
-              // if (!selectedFilter.value[newIndex] && selectedFilter.value[newIndex - 1]) {
-              //   selectedFilter.value[newIndex] = selectedFilter.value[newIndex - 1] || ''
-              // }
-
-              // if (selectedFilter.value[newIndex]) {
-              //   selectedFilter.value.push(selectedFilter.value[newIndex])
-              // } else {
-              //   selectedFilter.value.push('')
-              // }
-              // const currentFilter = selectedFilter.value[newIndex] ? selectedFilter.value[newIndex] : ''
               ctx.drawImage(videoRef.value, 0, 0, canvas.width, canvas.height)
               selectedFrame.value.image.push(canvas)
               convertFrameToCanvas()
@@ -282,9 +287,11 @@ type CanvasSize = {
     }
   }
 
-  const deleteImage = (index: number) => {
+  const deleteImage = async(index: number) => {
     selectedFrame.value.image.splice(index, 1)
-    convertFrameToCanvas()
+    previewButtonStyle.value = []
+    showDeleteButton.value = false
+    await convertFrameToCanvas()
   }
 </script>
 
