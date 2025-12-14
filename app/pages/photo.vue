@@ -1,22 +1,55 @@
 <template>
-  <div class="max-h-dvh overflow-hidden p-5">
+  <div class="h-dvh overflow-hidden bg-white p-5">
     <client-only>
       <div
-        class="w-full flex flex-col lg:flex-row gap-5 items-center">
-        <div class="w-1/4 hidden xl:block" />
-        <div class="w-full max-w-3xl lg:w-2/3 xl:w-1/2">
-          <div class="w-auto flex flex-col items-center bg-white shadow rounded-2xl p-5">
+        class="w-full h-full flex flex-row gap-5 justify-center items-center">
+        <div class="w-full lg:w-3/4 h-full flex items-end">
+          <div class="w-full h-full relative">
+            <video
+              ref="videoRef"
+              autoplay
+              playsinline
+              class="w-full absolute left-0"
+              :style="{
+                top: videoYPosition + 'px'
+              }" />
+            <div class="bg-white p-5 flex justify-center items-center absolute right-0"
+              :class="{
+                'w-full bottom-0': clientWidth < clientHeight,
+                'h-full': clientWidth >= clientHeight,
+              }">
+              <button
+                @click="capture"
+                :disabled="selectedFrame.image.length >= selectedFrame.shots"
+                class="text-white bg-red-600 disabled:bg-gray-400 p-3 rounded-full">
+                <icons-camera class="size-7" />
+              </button>
+            </div>
+          </div>
+        </div>
+        <!-- <div class="w-full max-w-3xl lg:w-2/3 xl:w-1/2 h-full flex justify-center items-center">
+          <div class="w-auto flex flex-col items-center bg-white shadow rounded-2xl p-5 relative">
             <div class="relative">
               <video
                 ref="videoRef"
                 autoplay
                 playsinline
-                class="max-w-full" />
+                class="w-auto h-100 max-h-full xl:h-auto" />
               <div
                 v-if="startTimer"
                 class="absolute top-0 left-0 w-full h-full flex justify-center items-center text-white/50 text-7xl">
                 <p>{{ restTime }}</p>
               </div>
+              <div
+                class="md:hidden w-full absolute top-0 left-0 bg-white"
+                :style="{
+                  height: '100px'
+                }" />
+              <div
+                class="md:hidden w-full absolute bottom-0 left-0 bg-white"
+                :style="{
+                  height: '100px'
+                }" />
             </div>
             <div class="flex justify-center items-center mt-5">
               <button
@@ -28,7 +61,7 @@
             </div>
           </div>
         </div>
-        <div class="w-full lg:w-1/3 xl:w-1/4 flex flex-col items-center gap-5">
+        <div class="w-full lg:w-1/3 xl:w-1/4 hidden md:flex flex-col items-center gap-5">
           <p class="font-medium text-base">Preview</p>
           <div id="preview" class="relative max-h-100">
             <img
@@ -51,7 +84,7 @@
               </div>
             </div>
           </div>
-      </div>
+        </div> -->
       </div>
     </client-only>
     <div v-if="isLoading" class="absolute top-0 left-0 w-full h-full bg-black/10 flex justify-center items-center">
@@ -102,6 +135,9 @@ type CanvasSize = {
   const restTime = ref<number>(3)
   const showDeleteButton = ref<boolean>(false)
   const deleteButtonIndex = ref<number>()
+  const videoYPosition = ref<number>(0)
+  const clientWidth = ref<number>(0)
+  const clientHeight = ref<number>(0)
   const selectedFrame = ref<Frame>({
     id: "basic-4",
     name: "basic 4 layout",
@@ -142,7 +178,7 @@ type CanvasSize = {
   try {
       stream = await navigator.mediaDevices.getUserMedia({
         video: {
-          facingMode: 'user',
+          facingMode: 'user'
           // width: { ideal: 1920 },
           // height: { ideal: 1440 },
           // aspectRatio: 4 / 3
@@ -153,6 +189,10 @@ type CanvasSize = {
       if (videoRef.value) {
         videoRef.value.srcObject = stream
         await videoRef.value.play()
+        const videoHeight = videoRef.value.clientHeight
+        clientWidth.value = window.innerWidth
+        clientHeight.value = window.innerHeight
+        videoYPosition.value = (innerHeight - videoHeight) / 2
       }
       await convertFrameToCanvas()
       isLoading.value = false
