@@ -1,23 +1,19 @@
 <template>
-  <div class="h-dvh overflow-hidden bg-white p-5">
+  <div class="h-dvh overflow-hidden">
     <client-only>
       <div
-        class="w-full h-full flex flex-row gap-5 justify-center items-center">
-        <div class="w-full lg:w-3/4 h-full flex items-end">
-          <div class="w-full h-full relative">
-            <video
-              ref="videoRef"
-              autoplay
-              playsinline
-              class="w-full absolute left-0"
-              :style="{
-                top: videoYPosition + 'px'
-              }" />
-            <div class="bg-white p-5 flex justify-center items-center absolute right-0"
-              :class="{
-                'w-full bottom-0': clientWidth < clientHeight,
-                'h-full': clientWidth >= clientHeight,
-              }">
+        class="w-full h-full flex flex-col xl:flex-row gap-5 justify-center items-center">
+        <div class="w-full lg:w-3/4 max-h-full flex flex-col justify-center items-center">
+          <div class="bg-white rounded-2xl p-5 shadow">
+            <div class="relative">
+              <video
+                ref="videoRef"
+                autoplay
+                playsinline
+                class="h-full" />
+            </div>
+            <div
+              class="bg-white p-5 flex justify-center items-center">
               <button
                 @click="capture"
                 :disabled="selectedFrame.image.length >= selectedFrame.shots"
@@ -60,8 +56,8 @@
               </button>
             </div>
           </div>
-        </div>
-        <div class="w-full lg:w-1/3 xl:w-1/4 hidden md:flex flex-col items-center gap-5">
+        </div> -->
+        <!-- <div class="w-full lg:w-1/3 xl:w-1/4 hidden lg:flex flex-col items-center gap-5">
           <p class="font-medium text-base">Preview</p>
           <div id="preview" class="relative max-h-100">
             <img
@@ -178,7 +174,7 @@ type CanvasSize = {
   try {
       stream = await navigator.mediaDevices.getUserMedia({
         video: {
-          facingMode: 'user'
+          facingMode: 'user',
           // width: { ideal: 1920 },
           // height: { ideal: 1440 },
           // aspectRatio: 4 / 3
