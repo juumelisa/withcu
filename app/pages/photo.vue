@@ -1,16 +1,16 @@
 <template>
-  <div class="h-dvh overflow-hidden">
+  <div class="h-dvh overflow-hidden p-5">
     <client-only>
       <div
         class="w-full h-full flex flex-col xl:flex-row gap-5 justify-center items-center">
-        <div class="w-full lg:w-3/4 max-h-full flex flex-col justify-center items-center">
+        <div class="w-full lg:w-3/4 flex flex-col justify-center items-center">
           <div class="bg-white rounded-2xl p-5 shadow">
             <div class="relative">
               <video
                 ref="videoRef"
                 autoplay
                 playsinline
-                class="h-full" />
+                class="max-h-full" />
             </div>
             <div
               class="bg-white p-5 flex justify-center items-center">
